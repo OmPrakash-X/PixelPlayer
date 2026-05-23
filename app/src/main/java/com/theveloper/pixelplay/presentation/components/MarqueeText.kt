@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeSpacing
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,7 +41,7 @@ fun AutoScrollingTextOnDemand(
     canScroll: Boolean = true
 ) {
     var overflow by remember(text, style) { mutableStateOf(false) }
-    val canStart by remember(text, style, canScroll) { derivedStateOf { expansionFractionProvider() > 0.99f && overflow && canScroll } }
+    val canStart by remember(text, style) { derivedStateOf { expansionFractionProvider() > 0.99f && overflow } }
 
 
 // Usamos un Text "medidor" sólo la primera composición para detectar overflow.
@@ -141,12 +142,41 @@ fun AutoScrollingText(
                         )
                     )
                 }
+            } else if (isOverflowing) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                        .drawWithContent {
+                            drawContent()
+                            val gradientWidthPx = gradientWidth.toPx()
+                            // Right fade-out: Always visible for overflow
+                            drawRect(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(gradientEdgeColor, Color.Transparent),
+                                    startX = size.width - gradientWidthPx,
+                                    endX = size.width
+                                ),
+                                blendMode = BlendMode.DstIn
+                            )
+                        }
+                ) {
+                    Text(
+                        text = text,
+                        style = style,
+                        textAlign = textAlign,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             } else {
                 Text(
                     text = text,
                     style = style,
                     textAlign = textAlign,
                     maxLines = 1,
+                    softWrap = false
                 )
             }
         }
