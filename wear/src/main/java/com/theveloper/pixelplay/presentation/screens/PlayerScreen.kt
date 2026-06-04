@@ -123,6 +123,7 @@ import com.theveloper.pixelplay.presentation.theme.radialBackgroundBrush
 import com.theveloper.pixelplay.presentation.theme.surfaceContainerColor
 import com.theveloper.pixelplay.presentation.viewmodel.WearPlayerViewModel
 import com.theveloper.pixelplay.shared.WearPlayerState
+import com.theveloper.pixelplay.shared.WearSyncedLyricLine
 import com.theveloper.pixelplay.shared.WearVolumeState
 import androidx.core.graphics.ColorUtils
 import kotlinx.coroutines.delay
@@ -195,7 +196,7 @@ private fun PlayerContent(
     // we'd churn the GC for nothing.
     val background = remember(palette) { palette.radialBackgroundBrush() }
 
-    val pagerState = rememberPagerState(initialPage = 0, pageCount = { 2 })
+    val pagerState = rememberPagerState(initialPage = 1, pageCount = { 3 })
     var mainPageQueueReveal by remember { mutableFloatStateOf(0f) }
     var albumRevealProgress by remember { mutableFloatStateOf(0f) }
     val isMainPlayerPage = pagerState.currentPage == 0
@@ -222,6 +223,15 @@ private fun PlayerContent(
         ) { page ->
             when (page) {
                 0 -> {
+                    WearLyricsPage(
+                        state = state,
+                        isPhoneConnected = isPhoneConnected,
+                        isWatchOutputSelected = isWatchOutputSelected,
+                        isAmbient = isAmbient,
+                    )
+                }
+
+                1 -> {
                     PlayerMainPageHost(
                         state = state,
                         albumArt = albumArt,
@@ -1195,11 +1205,13 @@ private fun MainPlayerPage(
                 .align(Alignment.BottomCenter),
         )
 
-        AlwaysOnScalingPositionIndicator(
-            listState = columnState.state,
-            modifier = Modifier.align(Alignment.CenterEnd),
-            color = palette.textPrimary,
-        )
+        if (!isAmbient) {
+            AlwaysOnScalingPositionIndicator(
+                listState = columnState.state,
+                modifier = Modifier.align(Alignment.CenterEnd),
+                color = palette.textPrimary,
+            )
+        }
     }
 }
 
@@ -1212,25 +1224,271 @@ private fun rememberLivePositionMs(state: WearPlayerState): androidx.compose.run
         safeAnchorPosition,
         safeDuration,
         state.isPlaying,
+        state.positionUpdatedElapsedRealtimeMs,
     ) {
-        "${state.songId}|$safeAnchorPosition|$safeDuration|${state.isPlaying}"
+        "${state.songId}|$safeAnchorPosition|$safeDuration|${state.isPlaying}|${state.positionUpdatedElapsedRealtimeMs}"
     }
     return produceState(
-        initialValue = safeAnchorPosition,
+        initialValue = state.livePositionFromAnchor(safeAnchorPosition, safeDuration),
         key1 = positionKey,
     ) {
-        value = safeAnchorPosition
+        value = state.livePositionFromAnchor(safeAnchorPosition, safeDuration)
         if (!state.isPlaying || safeDuration <= 0L) {
             return@produceState
         }
 
-        val startElapsedRealtime = SystemClock.elapsedRealtime()
         while (true) {
-            val elapsed = SystemClock.elapsedRealtime() - startElapsedRealtime
-            val next = (safeAnchorPosition + elapsed).coerceIn(0L, safeDuration)
+            val next = state.livePositionFromAnchor(safeAnchorPosition, safeDuration)
             value = next
             if (next >= safeDuration) break
             delay(250L)
+        }
+    }
+}
+
+private fun WearPlayerState.livePositionFromAnchor(
+    safeAnchorPosition: Long,
+    safeDuration: Long,
+): Long {
+    if (!isPlaying || safeDuration <= 0L) return safeAnchorPosition
+    val anchorElapsedRealtime = positionUpdatedElapsedRealtimeMs
+    if (anchorElapsedRealtime <= 0L) return safeAnchorPosition
+    val elapsed = (SystemClock.elapsedRealtime() - anchorElapsedRealtime).coerceAtLeast(0L)
+    return (safeAnchorPosition + elapsed).coerceIn(0L, safeDuration)
+}
+
+@Composable
+private fun WearLyricsPage(
+    state: WearPlayerState,
+    isPhoneConnected: Boolean,
+    isWatchOutputSelected: Boolean,
+    isAmbient: Boolean,
+) {
+    val palette = LocalWearPalette.current
+    val columnState = rememberResponsiveColumnState()
+    val lyrics = state.lyrics
+    val syncedLines = lyrics?.synced.orEmpty()
+    val activeLineIndex by rememberActiveLyricLineIndex(
+        state = state,
+        lines = syncedLines,
+    )
+
+    LaunchedEffect(state.songId, activeLineIndex, isAmbient) {
+        if (activeLineIndex >= 0) {
+            val targetItem = (activeLineIndex + 2).coerceAtLeast(0)
+            if (isAmbient) {
+                columnState.state.scrollToItem(targetItem)
+            } else {
+                columnState.state.animateScrollToItem(targetItem)
+            }
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        ScalingLazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 12.dp),
+            columnState = columnState,
+        ) {
+            item { Spacer(modifier = Modifier.height(28.dp)) }
+
+            item {
+                Text(
+                    text = "Lyrics",
+                    style = MaterialTheme.typography.caption2,
+                    fontWeight = FontWeight.SemiBold,
+                    color = palette.textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            if (lyrics?.hasLyrics == true) {
+                if (syncedLines.isNotEmpty()) {
+                    syncedLines.forEachIndexed { index, line ->
+                        item(key = "${line.timeMs}-$index") {
+                            WearSyncedLyricLineItem(
+                                line = line,
+                                active = index == activeLineIndex,
+                                isAmbient = isAmbient,
+                            )
+                        }
+                    }
+                } else {
+                    lyrics.plain.forEachIndexed { index, line ->
+                        item(key = "plain-$index") {
+                            WearPlainLyricLineItem(line = line)
+                        }
+                    }
+                }
+            } else {
+                item {
+                    WearLyricsEmptyState(
+                        isPhoneConnected = isPhoneConnected,
+                        isWatchOutputSelected = isWatchOutputSelected,
+                    )
+                }
+            }
+
+            item { Spacer(modifier = Modifier.height(42.dp)) }
+        }
+
+        AlwaysOnScalingPositionIndicator(
+            listState = columnState.state,
+            modifier = Modifier.align(Alignment.CenterEnd),
+            color = palette.textPrimary,
+            )
+    }
+}
+
+@Composable
+private fun WearSyncedLyricLineItem(
+    line: WearSyncedLyricLine,
+    active: Boolean,
+    isAmbient: Boolean,
+) {
+    val palette = LocalWearPalette.current
+    val targetTextColor = if (active) palette.textPrimary else palette.textSecondary.copy(alpha = 0.72f)
+    val textColor = if (isAmbient) {
+        targetTextColor
+    } else {
+        animateColorAsState(
+            targetValue = targetTextColor,
+            animationSpec = spring(),
+            label = "wearLyricLineColor",
+        ).value
+    }
+    val scale = if (isAmbient) {
+        1f
+    } else {
+        animateFloatAsState(
+            targetValue = if (active) 1.08f else 1f,
+            animationSpec = spring(),
+            label = "wearLyricLineScale",
+        ).value
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = line.line.ifBlank { line.translation.orEmpty() },
+            style = if (active) MaterialTheme.typography.body1 else MaterialTheme.typography.caption1,
+            fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
+            color = textColor,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        val secondaryText = line.translation?.takeIf { it.isNotBlank() }
+            ?: line.romanization?.takeIf { it.isNotBlank() }
+        if (active && !secondaryText.isNullOrBlank() && secondaryText != line.line) {
+            Text(
+                text = secondaryText,
+                style = MaterialTheme.typography.caption2,
+                color = palette.textSecondary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WearPlainLyricLineItem(line: String) {
+    val palette = LocalWearPalette.current
+    Text(
+        text = line,
+        style = MaterialTheme.typography.caption1,
+        color = palette.textPrimary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 5.dp),
+    )
+}
+
+@Composable
+private fun WearLyricsEmptyState(
+    isPhoneConnected: Boolean,
+    isWatchOutputSelected: Boolean,
+) {
+    val palette = LocalWearPalette.current
+    val message = when {
+        isWatchOutputSelected -> "Phone lyrics sync is available while controlling phone playback"
+        !isPhoneConnected -> "Connect phone to sync lyrics"
+        else -> "No lyrics synced yet"
+    }
+    Text(
+        text = message,
+        style = MaterialTheme.typography.caption1,
+        color = palette.textSecondary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+    )
+}
+
+private fun List<WearSyncedLyricLine>.activeLyricLineIndex(positionMs: Long): Int {
+    if (isEmpty()) return -1
+    val index = indexOfLast { it.timeMs.toLong() <= positionMs }
+    return index.coerceAtLeast(0)
+}
+
+@Composable
+private fun rememberActiveLyricLineIndex(
+    state: WearPlayerState,
+    lines: List<WearSyncedLyricLine>,
+): androidx.compose.runtime.State<Int> {
+    val safeDuration = state.totalDurationMs.coerceAtLeast(0L)
+    val safeAnchorPosition = state.currentPositionMs.coerceIn(0L, safeDuration)
+    val positionKey = remember(
+        state.songId,
+        safeAnchorPosition,
+        safeDuration,
+        state.isPlaying,
+        state.positionUpdatedElapsedRealtimeMs,
+        lines,
+    ) {
+        "${state.songId}|$safeAnchorPosition|$safeDuration|${state.isPlaying}|${state.positionUpdatedElapsedRealtimeMs}|${lines.size}|${lines.firstOrNull()?.timeMs}|${lines.lastOrNull()?.timeMs}"
+    }
+
+    return produceState(
+        initialValue = lines.activeLyricLineIndex(
+            state.livePositionFromAnchor(safeAnchorPosition, safeDuration),
+        ),
+        key1 = positionKey,
+    ) {
+        if (lines.isEmpty()) {
+            value = -1
+            return@produceState
+        }
+
+        while (true) {
+            val livePositionMs = state.livePositionFromAnchor(safeAnchorPosition, safeDuration)
+            val currentIndex = lines.activeLyricLineIndex(livePositionMs)
+            value = currentIndex
+
+            if (!state.isPlaying || safeDuration <= 0L) {
+                return@produceState
+            }
+
+            val nextLineTimeMs = lines.getOrNull(currentIndex + 1)?.timeMs?.toLong()
+                ?: return@produceState
+            val delayUntilNextLine = (nextLineTimeMs - livePositionMs)
+                .coerceIn(80L, 60_000L)
+            delay(delayUntilNextLine)
         }
     }
 }
