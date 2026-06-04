@@ -873,6 +873,14 @@ class DualPlayerEngine @Inject constructor(
     private fun buildAdaptiveLoadControl(): DefaultLoadControl {
         val isLowRam = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
             .isLowRamDevice
+        // setPrioritizeTimeOverSizeThresholds(true): instructs ExoPlayer to use buffered
+        // *duration* (not buffered *bytes*) as the criterion for deciding when to start
+        // playback and when to stop buffering. This is required for correct behaviour with
+        // high-bitrate and lossless formats (FLAC, hi-res ALAC, WAV) where a short byte
+        // window would be exhausted almost immediately, causing repeated rebuffering.
+        // Without this flag ExoPlayer falls back to a default byte threshold that was
+        // designed for typical compressed audio (~128–320 kbps) and will underperform on
+        // files with bitrates above ~1 Mbps.
         return if (isLowRam) {
             DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
@@ -881,6 +889,7 @@ class DualPlayerEngine @Inject constructor(
                     /* bufferForPlaybackMs              */  2_500,
                     /* bufferForPlaybackAfterRebufferMs */  5_000
                 )
+                .setPrioritizeTimeOverSizeThresholds(true)
                 .build()
         } else {
             DefaultLoadControl.Builder()
@@ -890,6 +899,7 @@ class DualPlayerEngine @Inject constructor(
                     /* bufferForPlaybackMs              */  2_500,
                     /* bufferForPlaybackAfterRebufferMs */  5_000
                 )
+                .setPrioritizeTimeOverSizeThresholds(true)
                 .build()
         }
     }

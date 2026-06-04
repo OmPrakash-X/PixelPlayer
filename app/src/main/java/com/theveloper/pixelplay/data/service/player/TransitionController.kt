@@ -59,7 +59,15 @@ class TransitionController @Inject constructor(
                 if (item != null) {
                     scope.launch {
                         delay(1_000L)
-                        if (currentObservedPlayer === newPlayer) {
+                        // Re-check both that this is still the observed player AND that the
+                        // track hasn't changed during the delay. If the user skipped while
+                        // we were waiting, currentMediaItem will differ from the captured
+                        // item and we must not schedule a transition for the stale track.
+                        // onMediaItemTransition will have already fired for the new track,
+                        // so we can safely drop this work.
+                        if (currentObservedPlayer === newPlayer &&
+                            newPlayer.currentMediaItem?.mediaId == item.mediaId
+                        ) {
                             scheduleTransitionFor(item)
                         }
                     }
