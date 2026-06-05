@@ -99,7 +99,7 @@ fun CollapsibleCommonTopBar(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = stringResource(R.string.auth_cd_back)
+                    contentDescription = stringResource(R.string.common_back)
                 )
             }
 

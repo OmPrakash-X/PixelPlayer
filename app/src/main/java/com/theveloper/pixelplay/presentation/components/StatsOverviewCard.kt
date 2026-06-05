@@ -91,7 +91,7 @@ fun StatsOverviewCard(
                         Modifier.padding(start = 24.dp, top = 24.dp, bottom = 24.dp)
                     ) {
                         Text(
-                            text = stringResource(R.string.presentation_batch_g_stats_overview_title),
+                            text = stringResource(R.string.home_stats_overview_title),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -144,7 +144,7 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.presentation_batch_g_stats_overview_total_plays),
+                    text = stringResource(R.string.home_stats_overview_total_plays),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -157,7 +157,7 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.presentation_batch_g_stats_overview_avg_per_day),
+                    text = stringResource(R.string.home_stats_overview_avg_per_day),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -173,7 +173,7 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
         if (topTrack != null) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = stringResource(R.string.presentation_batch_g_stats_overview_top_track),
+                    text = stringResource(R.string.home_stats_overview_top_track),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -186,7 +186,7 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
                 )
                 Text(
                     text = stringResource(
-                        R.string.presentation_batch_g_stats_overview_top_track_line,
+                        R.string.home_stats_overview_top_track_line,
                         topTrack.artist,
                         topTrack.playCount
                     ),

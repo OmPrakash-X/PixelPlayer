@@ -358,7 +358,7 @@ fun SearchScreen(
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Rounded.Search,
-                                        contentDescription = stringResource(R.string.cd_search_icon),
+                                        contentDescription = stringResource(R.string.search_cd_search_icon),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(24.dp)
                                     )
@@ -379,7 +379,7 @@ fun SearchScreen(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Rounded.Close,
-                                                contentDescription = stringResource(R.string.cd_clear_search_query),
+                                                contentDescription = stringResource(R.string.search_cd_clear_search_query),
                                                 tint = MaterialTheme.colorScheme.primary
                                             )
                                         }
@@ -411,7 +411,7 @@ fun SearchScreen(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.rounded_settings_24),
-                        contentDescription = stringResource(R.string.presentation_batch_d_open_settings_cd)
+                        contentDescription = stringResource(R.string.library_cd_open_settings)
                     )
                 }
             }
@@ -1040,7 +1040,7 @@ fun EmptySearchResults(searchQuery: String, colorScheme: ColorScheme) {
     ) {
         Icon(
             imageVector = Icons.Rounded.Search,
-            contentDescription = stringResource(R.string.cd_no_search_results),
+            contentDescription = stringResource(R.string.search_cd_no_results),
             modifier = Modifier
                 .size(80.dp)
                 .padding(bottom = 16.dp),
@@ -1453,7 +1453,7 @@ fun SearchResultAlbumItem(
                         contentColor = MaterialTheme.colorScheme.onSecondary
                     )
                 ) {
-                    Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.cd_play_album), modifier = Modifier.size(24.dp))
+                    Icon(Icons.Rounded.PlayArrow, contentDescription = stringResource(R.string.common_play_album), modifier = Modifier.size(24.dp))
                 }
             }
             if (isSelectionMode && isSelected) {
