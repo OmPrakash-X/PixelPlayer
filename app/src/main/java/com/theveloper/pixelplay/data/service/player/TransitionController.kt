@@ -142,6 +142,9 @@ class TransitionController @Inject constructor(
                 engine.cancelNext()
             }
 
+            // Debounce preparing the next track during rapid skips
+            delay(1500)
+
             val player = engine.masterPlayer
             val repeatMode = player.repeatMode
             val transitionTarget = engine.getNextTransitionTarget(currentMediaItem, repeatMode)

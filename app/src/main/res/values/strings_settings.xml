@@ -120,6 +120,7 @@
     <string name="setcat_language_chinese">简体中文</string>
     <string name="setcat_language_indonesian">Bahasa Indonesia</string>
     <string name="setcat_language_italian">Italiano</string>
+    <string name="setcat_language_turkish">Türkçe</string>
     <string name="setcat_app_theme_label">App Theme</string>
     <string
         name="setcat_app_theme_desc"
@@ -131,6 +132,14 @@
     <string
         name="setcat_smooth_corners_subtitle"
     >Use complex shaped corners effectively improving aesthetics but may affect performance on low-end devices</string>
+    <string name="setcat_disable_blur_all_over_title">Disable Blur Effects</string>
+    <string
+        name="setcat_disable_blur_all_over_subtitle"
+    >Turn off blur effects across the app to save battery and resources.</string>
+    <string name="setcat_show_scrollbar_title">Show Scrollbar</string>
+    <string
+        name="setcat_show_scrollbar_subtitle"
+    >Display lateral scrollbar on music lists for quick scrolling</string>
     <string name="setcat_now_playing">Now Playing</string>
     <string name="setcat_player_theme_label">Player Theme</string>
     <string

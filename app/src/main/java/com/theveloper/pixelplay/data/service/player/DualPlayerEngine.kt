@@ -153,14 +153,16 @@ internal fun shouldDisableAudioOffloadOnEarlyBuffering(
     lastPlayingAtMs: Long,
     timeSincePlayingMs: Long,
     isPostSeekBuffering: Boolean,
-    isPostTransitionBuffering: Boolean
+    isPostTransitionBuffering: Boolean,
+    isPostMediaItemTransition: Boolean
 ): Boolean {
     return audioOffloadEnabled &&
         !transitionRunning &&
         lastPlayingAtMs > 0L &&
         timeSincePlayingMs < 500L &&
         !isPostSeekBuffering &&
-        !isPostTransitionBuffering
+        !isPostTransitionBuffering &&
+        !isPostMediaItemTransition
 }
 
 /** ExoPlayer [DefaultLoadControl] buffer durations (ms) for a build of the player. */
@@ -185,14 +187,14 @@ internal fun loadControlBufferProfileFor(isLowRamDevice: Boolean): LoadControlBu
         LoadControlBufferProfile(
             minBufferMs = 15_000,
             maxBufferMs = 30_000,
-            bufferForPlaybackMs = 2_000,
+            bufferForPlaybackMs = 1_000,
             bufferForPlaybackAfterRebufferMs = 5_000
         )
     } else {
         LoadControlBufferProfile(
             minBufferMs = 30_000,
             maxBufferMs = 60_000,
-            bufferForPlaybackMs = 2_000,
+            bufferForPlaybackMs = 1_000,
             bufferForPlaybackAfterRebufferMs = 5_000
         )
     }
@@ -289,6 +291,8 @@ class DualPlayerEngine @Inject constructor(
     // player rebuild, which leaves the MediaSession briefly pointing at the released player
     // and silently drops any subsequent seeks.
     private var lastSeekAtMs: Long = 0L
+    // Used to distinguish a STATE_BUFFERING caused by a song transition from a real HAL offload reset.
+    private var lastMediaItemTransitionAtMs: Long = 0L
     // Diagnostics: timestamp when the master player entered STATE_BUFFERING, used to
     // measure buffering->ready (playback prepare) durations for the performance report.
     private var bufferingStartedAtMs: Long = 0L
@@ -476,6 +480,7 @@ class DualPlayerEngine @Inject constructor(
         }
 
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+            lastMediaItemTransitionAtMs = SystemClock.elapsedRealtime()
             cancelAudioOffloadFallback()
             
             // If the transition was not automatic (e.g. user skip or playlist change),
@@ -537,16 +542,20 @@ class DualPlayerEngine @Inject constructor(
                     val timeSincePlayingMs = now - lastPlayingAtMs
                     val timeSinceSeekMs = now - lastSeekAtMs
                     val timeSinceTransitionMs = now - lastTransitionFinishedAtMs
+                    val timeSinceMediaItemTransitionMs = now - lastMediaItemTransitionAtMs
                     val isPostSeekBuffering = lastSeekAtMs > 0L && timeSinceSeekMs < 1_500L
                     val isPostTransitionBuffering = lastTransitionFinishedAtMs > 0L &&
                         timeSinceTransitionMs < POST_TRANSITION_OFFLOAD_GUARD_MS
+                    val isPostMediaItemTransition = lastMediaItemTransitionAtMs > 0L &&
+                        timeSinceMediaItemTransitionMs < 2_000L
                     if (shouldDisableAudioOffloadOnEarlyBuffering(
                             audioOffloadEnabled = audioOffloadEnabled,
                             transitionRunning = transitionRunning,
                             lastPlayingAtMs = lastPlayingAtMs,
                             timeSincePlayingMs = timeSincePlayingMs,
                             isPostSeekBuffering = isPostSeekBuffering,
-                            isPostTransitionBuffering = isPostTransitionBuffering
+                            isPostTransitionBuffering = isPostTransitionBuffering,
+                            isPostMediaItemTransition = isPostMediaItemTransition
                         )
                     ) {
                         disableAudioOffloadForSession(

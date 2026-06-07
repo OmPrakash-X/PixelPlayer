@@ -74,6 +74,7 @@ import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Style
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.BlurOff
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
@@ -84,6 +85,7 @@ import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Science
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Timer
+import androidx.compose.material.icons.rounded.UnfoldMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ButtonDefaults
@@ -551,6 +553,20 @@ fun SettingsCategoryScreen(
                                     checked = useSmoothCorners,
                                     onCheckedChange = settingsViewModel::setUseSmoothCorners,
                                     leadingIcon = { Icon(painterResource(R.drawable.rounded_rounded_corner_24), null, tint = MaterialTheme.colorScheme.secondary) }
+                                )
+                                SwitchSettingItem(
+                                    title = stringResource(R.string.setcat_disable_blur_all_over_title),
+                                    subtitle = stringResource(R.string.setcat_disable_blur_all_over_subtitle),
+                                    checked = uiState.disableBlurAllOver,
+                                    onCheckedChange = { settingsViewModel.setDisableBlurAllOver(it) },
+                                    leadingIcon = { Icon(Icons.Rounded.BlurOff, null, tint = MaterialTheme.colorScheme.secondary) }
+                                )
+                                SwitchSettingItem(
+                                    title = stringResource(R.string.setcat_show_scrollbar_title),
+                                    subtitle = stringResource(R.string.setcat_show_scrollbar_subtitle),
+                                    checked = uiState.showScrollbar,
+                                    onCheckedChange = { settingsViewModel.setShowScrollbar(it) },
+                                    leadingIcon = { Icon(Icons.Rounded.UnfoldMore, null, tint = MaterialTheme.colorScheme.secondary) }
                                 )
                             }
 

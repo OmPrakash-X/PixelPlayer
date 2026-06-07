@@ -152,6 +152,7 @@ import com.theveloper.pixelplay.presentation.viewmodel.SettingsViewModel
 import com.theveloper.pixelplay.presentation.utils.LocalAppHapticsConfig
 import com.theveloper.pixelplay.presentation.utils.performAppCompatHapticFeedback
 import com.theveloper.pixelplay.ui.theme.GoogleSansRounded
+import com.theveloper.pixelplay.ui.theme.LocalShowScrollbar
 import racra.compose.smooth_corner_rect_library.AbsoluteSmoothCornerShape
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
@@ -180,6 +181,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import com.theveloper.pixelplay.presentation.components.scoped.QueueItemDismissGestureHandler
 import androidx.compose.ui.unit.IntOffset
@@ -246,6 +248,9 @@ fun QueueBottomSheet(
     onQueueDragStart: () -> Unit,
     onQueueDrag: (Float) -> Unit,
     onQueueRelease: (Float, Float) -> Unit,
+    predictiveBackProgress: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
+    predictiveBackSwipeEdge: androidx.compose.runtime.State<Int?>,
+    queueSheetOffset: Animatable<Float, androidx.compose.animation.core.AnimationVector1D>,
     modifier: Modifier = Modifier,
     tonalElevation: Dp = 10.dp,
     shape: RoundedCornerShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
@@ -608,12 +613,16 @@ fun QueueBottomSheet(
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
                 if (updatedIsReordering || updatedReorderHandleInUse) return Offset.Zero
 
-                if (draggingSheetFromList && available.y < 0f) {
-                    finalizeListDrag()
-                    return Offset.Zero
-                }
-
                 if (draggingSheetFromList) {
+                    // While dragging the sheet from the list, keep consuming vertical
+                    // movement in BOTH directions so an upward drag can pull the sheet
+                    // back up and cancel the gesture (like a normal bottom sheet).
+                    // Only once the sheet is fully expanded again do we release control
+                    // back to the list so it can scroll its contents.
+                    if (available.y < 0f && queueSheetOffset.value <= 0.5f) {
+                        finalizeListDrag()
+                        return Offset.Zero
+                    }
                     listDragAccumulated += available.y
                     updatedOnQueueDrag(available.y)
                     return available
@@ -707,7 +716,43 @@ fun QueueBottomSheet(
         }
 
     Surface(
-        modifier = modifier,
+        modifier = modifier
+            .graphicsLayer {
+                val p = predictiveBackProgress.value
+                val offsetVal = queueSheetOffset.value
+                val y = offsetVal.roundToInt()
+                
+                if (p > 0f) {
+                    val scale = 1f - (p * 0.1f)
+                    scaleX = scale
+                    scaleY = scale
+                    translationY = p * 80.dp.toPx()
+                    
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(
+                        pivotFractionX = 0.5f,
+                        pivotFractionY = 1.0f
+                    )
+                    
+                    val cornerRadius = androidx.compose.ui.unit.lerp(28.dp, 48.dp, p)
+                    clip = true
+                    this.shape = RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
+                } else if (y < 0) {
+                    val h = size.height
+                    if (h > 0f) {
+                        scaleY = (h - y) / h
+                        scaleX = 1f
+                        translationY = 0f
+                        transformOrigin = androidx.compose.ui.graphics.TransformOrigin(
+                            pivotFractionX = 0.5f,
+                            pivotFractionY = 1.0f
+                        )
+                    }
+                } else {
+                    scaleX = 1f
+                    scaleY = 1f
+                    translationY = 0f
+                }
+            },
         shape = shape,
         tonalElevation = tonalElevation,
         color = colors.surfaceContainer,
@@ -783,7 +828,7 @@ fun QueueBottomSheet(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             contentPadding = PaddingValues(
                                 start = 0.dp,
-                                end = if (listState.canScrollForward || listState.canScrollBackward) 26.dp else 0.dp,
+                                end = if (LocalShowScrollbar.current && (listState.canScrollForward || listState.canScrollBackward)) 26.dp else 0.dp,
                                 bottom = MiniPlayerHeight + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 32.dp
                             )
                         ) {

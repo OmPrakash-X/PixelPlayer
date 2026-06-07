@@ -5,7 +5,7 @@
     <string name="do_not_show_again">Non mostrare più</string>
     <string name="dismiss">Ignora</string>
     <string name="all_files_access_title">Autorizzazione speciale richiesta</string>
-    <string name="all_files_access_description">Per modificare i metadati dei brani (file .mp3), PixelPlayer necessita di un accesso speciale a tutti i file. Questo ci permette di modificare direttamente i tag delle tracce. Concedi questa autorizzazione nella schermata successiva per attivare la modifica dei metadati.</string>
+    <string name="all_files_access_description">Per modificare i metadati dei brani (.mp3), PixelPlayer necessita di un accesso speciale a tutti i file. Questo ci permette di modificare direttamente i tag delle tracce. Concedi questa autorizzazione nella schermata successiva per abilitare la modifica dei metadati.</string>
     <string name="grant_permission_button">Concedi autorizzazione</string>
     <string name="all_files_access_setting">Accesso a tutti i file</string>
     <string name="error">Errore</string>
@@ -28,7 +28,7 @@
     <string name="lyrics_fetch_timeout">Timeout di connessione. Verifica la tua connessione Internet.</string>
     <string name="lyrics_network_error">Errore di rete. Verifica la tua connessione Internet.</string>
     <string name="lyrics_server_error">Errore server (codice %d). Riprova più tardi.</string>
-    <string name="found_n_matches_format">%d corrispondenza/e trovata/e</string>
+    <string name="found_n_matches_format">%d corrispondenza(e) trovata(e)</string>
     <string name="searched_for_x_format">Ricerca di \"%s\"</string>
     <string name="searching_lyrics">Ricerca testi…</string>
     <string name="lyrics_already_available">Testi già disponibili. Recupero online saltato.</string>
@@ -53,11 +53,15 @@
 
     <string name="sync_scanning">Scansione file musicali…</string>
     <string name="sync_processing">Elaborazione file…</string>
-    <string name="sync_files_progress">%1$d su %2$d file</string>
+    <string name="sync_files_progress">%1$d di %2$d file</string>
     <string name="sync_in_progress">Sincronizzazione libreria…</string>
     <string name="sync_complete">Sincronizzazione completata</string>
     <string name="sync_pending">In attesa…</string>
     <string name="syncing_library">Sincronizzazione libreria…</string>
+    <string name="library_background_sync">Completamento in background…</string>
+    <string name="library_background_sync_lyrics">Scansione testi…</string>
+    <string name="library_background_sync_cache">Pulizia cache copertine…</string>
+    <string name="library_background_sync_cloud">Sincronizzazione sorgenti cloud…</string>
     <string name="unknown_song_title">Titolo sconosciuto</string>
     <string name="unknown_artist">Artista sconosciuto</string>
     <string name="unknown_album">Album sconosciuto</string>
@@ -77,15 +81,23 @@
     <string name="pause_playback">Pausa</string>
     <string name="play_playback">Riproduci</string>
     <string name="playlist_not_found">Playlist non trovata.</string>
+    <string name="disc_number_header">Disco %d</string>
 
     <string name="ai_error_api_key">Configura una chiave API valida per il provider IA selezionato nelle Impostazioni.</string>
     <string name="ai_error_generic">Errore IA: %s</string>
-    <string name="ai_error_quota">Il provider IA selezionato ha rifiutato la richiesta perché l\'account non ha più crediti o ha superato la quota.</string>
+    <string name="ai_error_quota">Il provider IA selezionato ha rifiutato la richiesta perché l\'account non ha crediti o ha superato la quota.</string>
     <string name="ai_error_model_unavailable">Il modello IA selezionato non è più disponibile. PixelPlayer ha provato a passare automaticamente a un modello supportato.</string>
-    <string name="ai_no_songs_found">L\'IA non ha trovato nessun brano per la tua richiesta.</string>
+    <string name="ai_no_songs_found">L\'IA non ha trovato brani per la tua richiesta.</string>
     <string name="ai_prompt_empty">Scrivi un\'idea per il tuo Daily Mix</string>
-    <string name="ai_daily_mix_updated">Daily Mix aggiornato con l\'IA</string>
-    <string name="ai_no_songs_for_mix">L\'IA non ha trovato nessun brano per questo mix</string>
+    <string name="ai_daily_mix_updated">Daily Mix aggiornato con IA</string>
+    <string name="ai_no_songs_for_mix">L\'IA non ha trovato brani per questo mix</string>
+
+    <string name="ai_translate_via_ai">Traduci con IA</string>
+    <string name="ai_lyrics_already_translated">Questi testi hanno già una traduzione</string>
+    <string name="ai_lyrics_already_in_target_language">Questi testi sono già in questa lingua</string>
+    <string name="ai_lyrics_api_not_configured">API non configurata</string>
+    <string name="ai_lyrics_translation_success">Testi tradotti con successo!</string>
+    <string name="ai_lyrics_translating">Traduzione testi in corso...</string>
 
     <string name="shortcut_shuffle_short">Casuale</string>
     <string name="shortcut_shuffle_long">Riproduci tutti i brani in modalità casuale</string>
@@ -147,7 +159,7 @@
     <string name="cast_server_channel_name">Server multimediale Cast</string>
     <string name="cast_server_notification_title">Trasmissione al dispositivo</string>
     <string name="cast_server_notification_text">Servizio multimediale verso dispositivo Cast</string>
-    <string name="cast_server_foreground_error">%1$s : %2$s</string>
+    <string name="cast_server_foreground_error">%1$s: %2$s</string>
 
     <!-- Backup / data transfer (ViewModels) -->
     <string name="backup_invalid_format">Backup non valido: %1$s</string>
@@ -184,7 +196,7 @@
     <string name="player_share_zip_failed_format">Condivisione fallita: %1$s</string>
     <string name="player_cannot_delete_currently_playing">Impossibile eliminare il brano in riproduzione</string>
     <string name="player_batch_delete_files_deleted_skipped_format">%1$d file eliminati (%2$d saltati - in riproduzione)</string>
-    <string name="player_batch_delete_partial_format">%1$d su %2$d file eliminati</string>
+    <string name="player_batch_delete_partial_format">%1$d di %2$d file eliminati</string>
     <string name="player_delete_files_failed">Eliminazione file fallita</string>
     <string name="player_file_deleted">File eliminato</string>
     <string name="player_delete_file_not_found">Impossibile eliminare il file o file non trovato</string>
@@ -222,4 +234,20 @@
     <string name="ui_format_percent_d">%1$d%%</string>
     <string name="backup_manifest_schema_v">v%1$d</string>
     <string name="backup_manifest_device_line">%1$s %2$s</string>
+
+    <!-- Batch Edit -->
+    <string name="batch_edit_toolbar_title">Modifica %d brani</string>
+    <string name="batch_edit_info_message">Solo i campi modificati verranno aggiornati. Lascia i campi vuoti per mantenere i valori esistenti.</string>
+    <string name="batch_edit_mixed_values">(Valori misti)</string>
+    <string name="batch_edit_optional">(Opzionale - lascia vuoto per saltare)</string>
+    <string name="batch_edit_success">Aggiornati correttamente %d brani</string>
+    <string name="batch_edit_partial_success">Aggiornati %1$d di %2$d brani. Alcuni file non sono stati modificati.</string>
+    <string name="batch_edit_failed">Aggiornamento brani fallito</string>
+
+    <!-- Batch Edit Cover Art -->
+    <string name="batch_edit_cover_art_heading">Copertina in batch</string>
+    <string name="batch_edit_cover_art_hint">Questo sostituirà la copertina per tutti i %d brani selezionati</string>
+    <string name="batch_edit_set_cover_art">Imposta copertina per tutti</string>
+    <string name="batch_edit_remove_all_art">Rimuovi tutte le copertine</string>
+    <string name="batch_edit_multiple_covers">(Più copertine diverse)</string>
 </resources>

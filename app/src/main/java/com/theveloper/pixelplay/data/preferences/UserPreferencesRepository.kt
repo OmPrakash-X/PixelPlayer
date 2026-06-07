@@ -207,8 +207,8 @@ class UserPreferencesRepository @Inject constructor(
         val IMMERSIVE_LYRICS_TIMEOUT = longPreferencesKey("immersive_lyrics_timeout")
         val USE_ANIMATED_LYRICS = booleanPreferencesKey("use_animated_lyrics")
         val ANIMATED_LYRICS_BLUR_ENABLED = booleanPreferencesKey("animated_lyrics_blur_enabled")
-        val ANIMATED_LYRICS_BLUR_STRENGTH = floatPreferencesKey("animated_lyrics_blur_strength")
-
+        val ANIMATED_LYRICS_BLUR_STRENGTH = androidx.datastore.preferences.core.floatPreferencesKey("animated_lyrics_blur_strength")
+        val DISABLE_BLUR_ALL_OVER = booleanPreferencesKey("disable_blur_all_over")
         // View preferences
         val IS_GENRE_GRID_VIEW = booleanPreferencesKey("is_genre_grid_view")
         val IS_ALBUMS_LIST_VIEW = booleanPreferencesKey("is_albums_list_view")
@@ -228,6 +228,7 @@ class UserPreferencesRepository @Inject constructor(
         // ReplayGain
         val REPLAYGAIN_ENABLED = booleanPreferencesKey("replaygain_enabled")
         val REPLAYGAIN_USE_ALBUM_GAIN = booleanPreferencesKey("replaygain_use_album_gain")
+        val SHOW_SCROLLBAR = booleanPreferencesKey("show_scrollbar")
     }
 
     // ─── Private helpers ─────────────────────────────────────────────────────
@@ -603,10 +604,335 @@ class UserPreferencesRepository @Inject constructor(
         dataStore.edit { it[PreferencesKeys.LAST_SYNC_TIMESTAMP] = timestamp }
     }
 
-    suspend fun markDirectoryRulesVersionApplied(version: Int) {
+suspend fun markDirectoryRulesVersionApplied(version: Int) {
         dataStore.edit { it[PreferencesKeys.LAST_APPLIED_DIRECTORY_RULES_VERSION] = version }
     }
 
+    val dailyMixSongIdsFlow: Flow<List<String>> =
+            dataStore.data.map { preferences ->
+                val jsonString = preferences[PreferencesKeys.DAILY_MIX_SONG_IDS]
+                if (jsonString != null) {
+                    try {
+                        json.decodeFromString<List<String>>(jsonString)
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                } else {
+                    emptyList()
+                }
+            }
+
+    suspend fun saveDailyMixSongIds(songIds: List<String>) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DAILY_MIX_SONG_IDS] = json.encodeToString(songIds)
+        }
+    }
+
+    val yourMixSongIdsFlow: Flow<List<String>> =
+            dataStore.data.map { preferences ->
+                val jsonString = preferences[PreferencesKeys.YOUR_MIX_SONG_IDS]
+                if (jsonString != null) {
+                    try {
+                        json.decodeFromString<List<String>>(jsonString)
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                } else {
+                    emptyList()
+                }
+            }
+
+    suspend fun saveYourMixSongIds(songIds: List<String>) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.YOUR_MIX_SONG_IDS] = json.encodeToString(songIds)
+        }
+    }
+
+    val isGenreGridViewFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.IS_GENRE_GRID_VIEW] ?: true
+        }
+
+    suspend fun setGenreGridView(isGrid: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_GENRE_GRID_VIEW] = isGrid
+        }
+    }
+
+    val isAlbumsListViewFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.IS_ALBUMS_LIST_VIEW] ?: false
+        }
+
+    suspend fun setAlbumsListView(isList: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_ALBUMS_LIST_VIEW] = isList
+        }
+    }
+
+    val lastDailyMixUpdateFlow: Flow<Long> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.LAST_DAILY_MIX_UPDATE] ?: 0L
+            }
+
+    suspend fun saveLastDailyMixUpdateTimestamp(timestamp: Long) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.LAST_DAILY_MIX_UPDATE] = timestamp
+        }
+    }
+
+    val minSongDurationFlow: Flow<Int> =
+        dataStore.data.map { preferences ->
+            (preferences[PreferencesKeys.MIN_SONG_DURATION] ?: 10000).coerceIn(0, 120000)
+        }
+
+    suspend fun setMinSongDuration(durationMs: Int) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MIN_SONG_DURATION] = durationMs.coerceIn(0, 120000)
+        }
+    }
+
+    suspend fun getMinSongDuration(): Int {
+        return minSongDurationFlow.first()
+    }
+
+    val minTracksPerAlbumFlow: Flow<Int> =
+        dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.MIN_TRACKS_PER_ALBUM] ?: 1
+        }
+
+    suspend fun setMinTracksPerAlbum(minTracks: Int) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.MIN_TRACKS_PER_ALBUM] = minTracks
+        }
+    }
+
+    val replayGainEnabledFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.REPLAYGAIN_ENABLED] ?: false
+        }
+
+    val replayGainUseAlbumGainFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.REPLAYGAIN_USE_ALBUM_GAIN] ?: false
+        }
+
+    suspend fun setReplayGainEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REPLAYGAIN_ENABLED] = enabled
+        }
+    }
+
+    suspend fun setReplayGainUseAlbumGain(useAlbumGain: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.REPLAYGAIN_USE_ALBUM_GAIN] = useAlbumGain
+        }
+    }
+
+    val showScrollbarFlow: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.SHOW_SCROLLBAR] ?: true
+        }
+
+    suspend fun setShowScrollbar(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SHOW_SCROLLBAR] = enabled
+        }
+    }
+
+    val allowedDirectoriesFlow: Flow<Set<String>> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.ALLOWED_DIRECTORIES] ?: emptySet()
+            }.distinctUntilChanged()
+
+    val blockedDirectoriesFlow: Flow<Set<String>> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.BLOCKED_DIRECTORIES] ?: emptySet()
+            }.distinctUntilChanged()
+
+    val initialSetupDoneFlow: Flow<Boolean> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.INITIAL_SETUP_DONE] ?: false
+            }
+
+    val keepPlayingInBackgroundFlow: Flow<Boolean> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.KEEP_PLAYING_IN_BACKGROUND] ?: true
+            }
+
+    val disableCastAutoplayFlow: Flow<Boolean> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.DISABLE_CAST_AUTOPLAY] ?: false
+            }
+
+    val resumeOnHeadsetReconnectFlow: Flow<Boolean> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.RESUME_ON_HEADSET_RECONNECT] ?: false
+            }
+
+    val showQueueHistoryFlow: Flow<Boolean> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.SHOW_QUEUE_HISTORY] ?: false
+            }
+
+    suspend fun setShowQueueHistory(show: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.SHOW_QUEUE_HISTORY] = show
+        }
+    }
+
+    val showPlayerFileInfoFlow: Flow<Boolean> =
+            dataStore.data.map { preferences ->
+                preferences[PreferencesKeys.FULL_PLAYER_SHOW_FILE_INFO] ?: true
+            }
+
+    suspend fun setShowPlayerFileInfo(show: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.FULL_PLAYER_SHOW_FILE_INFO] = show
+        }
+    }
+
+    val fullPlayerLoadingTweaksFlow: Flow<FullPlayerLoadingTweaks> = dataStore.data
+        .map { preferences ->
+            val delayAlbum = preferences[PreferencesKeys.FULL_PLAYER_DELAY_ALBUM] ?: true
+            val delayMetadata = preferences[PreferencesKeys.FULL_PLAYER_DELAY_METADATA] ?: true
+            val delayProgress = preferences[PreferencesKeys.FULL_PLAYER_DELAY_PROGRESS] ?: true
+            val delayControls = preferences[PreferencesKeys.FULL_PLAYER_DELAY_CONTROLS] ?: true
+
+            val delayAll = delayAlbum && delayMetadata && delayProgress && delayControls
+
+            FullPlayerLoadingTweaks(
+                delayAll = delayAll,
+                delayAlbumCarousel = delayAlbum,
+                delaySongMetadata = delayMetadata,
+                delayProgressBar = delayProgress,
+                delayControls = delayControls,
+                showPlaceholders = preferences[PreferencesKeys.FULL_PLAYER_PLACEHOLDERS] ?: true,
+                transparentPlaceholders = preferences[PreferencesKeys.FULL_PLAYER_PLACEHOLDER_TRANSPARENT] ?: false,
+                applyPlaceholdersOnClose = preferences[PreferencesKeys.FULL_PLAYER_PLACEHOLDERS_ON_CLOSE] ?: false,
+                switchOnDragRelease = preferences[PreferencesKeys.FULL_PLAYER_SWITCH_ON_DRAG_RELEASE] ?: true,
+                contentAppearThresholdPercent = preferences[PreferencesKeys.FULL_PLAYER_DELAY_THRESHOLD] ?: 98,
+                contentCloseThresholdPercent = preferences[PreferencesKeys.FULL_PLAYER_CLOSE_THRESHOLD] ?: 0
+            )
+        }
+
+    val favoriteSongIdsFlow: Flow<Set<String>> =
+            dataStore.data
+                .map { preferences ->
+                preferences[PreferencesKeys.FAVORITE_SONG_IDS] ?: emptySet()
+            }
+
+    val playlistSongOrderModesFlow: Flow<Map<String, String>> =
+            dataStore.data.map { preferences ->
+                val serializedModes = preferences[PreferencesKeys.PLAYLIST_SONG_ORDER_MODES]
+                if (serializedModes.isNullOrBlank()) {
+                    emptyMap()
+                } else {
+                    runCatching { json.decodeFromString<Map<String, String>>(serializedModes) }
+                            .getOrDefault(emptyMap())
+                }
+            }
+
+    val legacyUserPlaylistsFlow: Flow<List<Playlist>> =
+            dataStore.data.map { preferences ->
+                val jsonString = preferences[PreferencesKeys.USER_PLAYLISTS]
+                if (jsonString != null) {
+                    runCatching { json.decodeFromString<List<Playlist>>(jsonString) }
+                        .getOrDefault(emptyList())
+                } else {
+                    emptyList()
+                }
+            }
+
+    suspend fun getLegacyUserPlaylistsOnce(): List<Playlist> = legacyUserPlaylistsFlow.first()
+
+    suspend fun clearLegacyUserPlaylists() {
+        dataStore.edit { preferences ->
+            preferences.remove(PreferencesKeys.USER_PLAYLISTS)
+        }
+    }
+
+    suspend fun setPlaylistSongOrderMode(playlistId: String, modeValue: String) {
+        dataStore.edit { preferences ->
+            val existingModes =
+                    preferences[PreferencesKeys.PLAYLIST_SONG_ORDER_MODES]?.let { raw ->
+                        runCatching { json.decodeFromString<Map<String, String>>(raw) }
+                                .getOrDefault(emptyMap())
+                    }
+                            ?: emptyMap()
+
+            val updated = existingModes.toMutableMap()
+            updated[playlistId] = modeValue
+
+            preferences[PreferencesKeys.PLAYLIST_SONG_ORDER_MODES] = json.encodeToString(updated)
+        }
+    }
+
+    suspend fun setPlaylistSongOrderModes(modes: Map<String, String>) {
+        dataStore.edit { preferences ->
+            if (modes.isEmpty()) {
+                preferences.remove(PreferencesKeys.PLAYLIST_SONG_ORDER_MODES)
+            } else {
+                preferences[PreferencesKeys.PLAYLIST_SONG_ORDER_MODES] = json.encodeToString(modes)
+            }
+        }
+    }
+
+    suspend fun clearPlaylistSongOrderMode(playlistId: String) {
+        dataStore.edit { preferences ->
+            val existingModes =
+                    preferences[PreferencesKeys.PLAYLIST_SONG_ORDER_MODES]?.let { raw ->
+                        runCatching { json.decodeFromString<Map<String, String>>(raw) }
+                                .getOrDefault(emptyMap())
+                    }
+                            ?: emptyMap()
+
+            if (!existingModes.containsKey(playlistId)) return@edit
+
+            val updated = existingModes.toMutableMap()
+            updated.remove(playlistId)
+
+            preferences[PreferencesKeys.PLAYLIST_SONG_ORDER_MODES] = json.encodeToString(updated)
+        }
+    }
+
+    suspend fun updateAllowedDirectories(allowedPaths: Set<String>) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ALLOWED_DIRECTORIES] = allowedPaths
+            preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] = 0L
+            val currentVersion = preferences[PreferencesKeys.DIRECTORY_RULES_VERSION] ?: 0
+            preferences[PreferencesKeys.DIRECTORY_RULES_VERSION] =
+                if (currentVersion == Int.MAX_VALUE) 0 else currentVersion + 1
+        }
+    }
+
+    suspend fun updateDirectorySelections(allowedPaths: Set<String>, blockedPaths: Set<String>) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.ALLOWED_DIRECTORIES] = allowedPaths
+            preferences[PreferencesKeys.BLOCKED_DIRECTORIES] = blockedPaths
+            preferences[PreferencesKeys.LAST_SYNC_TIMESTAMP] = 0L
+            val currentVersion = preferences[PreferencesKeys.DIRECTORY_RULES_VERSION] ?: 0
+            preferences[PreferencesKeys.DIRECTORY_RULES_VERSION] =
+                if (currentVersion == Int.MAX_VALUE) 0 else currentVersion + 1
+        }
+    }
+
+    suspend fun setFavoriteSong(songId: String, isFavorite: Boolean) {
+        dataStore.edit { preferences ->
+            val currentFavorites = preferences[PreferencesKeys.FAVORITE_SONG_IDS] ?: emptySet()
+            preferences[PreferencesKeys.FAVORITE_SONG_IDS] = if (isFavorite) {
+                currentFavorites + songId
+            } else {
+                currentFavorites - songId
+            }
+        }
+    }
+
+    suspend fun clearFavoriteSongIds() {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.FAVORITE_SONG_IDS] = emptySet()
+        }
+    }
     // ─── Sort options ─────────────────────────────────────────────────────────
 
     val songsSortOptionFlow: Flow<String> =
@@ -989,7 +1315,21 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    // ─── Daily mix ────────────────────────────────────────────────────────────
+    val disableBlurAllOverFlow: Flow<Boolean> = dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.DISABLE_BLUR_ALL_OVER] ?: false
+        }
+
+    suspend fun setDisableBlurAllOver(disabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.DISABLE_BLUR_ALL_OVER] = disabled
+        }
+    }
+
+    val libraryTabsOrderFlow: Flow<String?> = dataStore.data
+        .map { preferences ->
+            preferences[PreferencesKeys.LIBRARY_TABS_ORDER]
+        }
 
     val dailyMixSongIdsFlow: Flow<List<String>> =
         pref { decodeJsonPref(it, PreferencesKeys.DAILY_MIX_SONG_IDS, emptyList()) }
