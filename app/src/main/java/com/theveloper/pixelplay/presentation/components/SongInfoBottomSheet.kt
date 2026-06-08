@@ -11,10 +11,22 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.runtime.withFrameNanos
+
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -355,6 +367,23 @@ fun SongInfoBottomSheet(
     val pagerState = androidx.compose.foundation.pager.rememberPagerState(pageCount = { 2 })
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
+    val configuration = LocalConfiguration.current
+    val safeInsets = WindowInsets.safeDrawing.asPaddingValues()
+    val maxPagerHeight = (
+        configuration.screenHeightDp.dp -
+            safeInsets.calculateTopPadding() -
+            safeInsets.calculateBottomPadding() -
+            180.dp
+        ).coerceAtLeast(280.dp)
+
+    var heightAnimationEnabled by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        withFrameNanos { }
+        heightAnimationEnabled = true
+    }
+
     ModalBottomSheet(
         onDismissRequest = {
             android.util.Log.d("PixelPlayerDebug", "ModalBottomSheet: onDismissRequest called, showEditSheet=$showEditSheet")
@@ -364,15 +393,11 @@ fun SongInfoBottomSheet(
         },
         sheetState = sheetState,
     ) {
-        // AQUÍ APLICAMOS EL FIX: Anulamos la fábrica de overscroll para todo lo que esté aquí adentro
-        CompositionLocalProvider(
-            LocalOverscrollFactory provides null
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.TopCenter
-            ) {
                 Column(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -441,14 +466,15 @@ fun SongInfoBottomSheet(
                             isPageTransitioning = false
                         }
                     }
-                    val sizeAnimationSpec = if (isPageTransitioning) {
-                        tween<androidx.compose.ui.unit.IntSize>(durationMillis = 280)
+                    val sizeAnimationSpec = if (heightAnimationEnabled && isPageTransitioning) {
+                        tween<androidx.compose.ui.unit.IntSize>(durationMillis = 280, easing = FastOutSlowInEasing)
                     } else {
                         androidx.compose.animation.core.snap()
                     }
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(max = maxPagerHeight)
                             .animateContentSize(
                                 animationSpec = sizeAnimationSpec,
                                 alignment = Alignment.TopCenter
@@ -461,11 +487,19 @@ fun SongInfoBottomSheet(
                                 .fillMaxWidth(),
                             verticalAlignment = Alignment.Top
                         ) { page ->
-                            when (page) {
-                                0 -> { // Options / Actions
-                                    Column(
-                                        modifier = Modifier
+                                when (page) {
+                                    0 -> { // Options / Actions
+                                        Column(
+                                            modifier = Modifier
                                             .fillMaxWidth()
+                                            .graphicsLayer {
+                                                val pageOffset = page - (pagerState.currentPage + pagerState.currentPageOffsetFraction)
+                                                val progress = kotlin.math.abs(pageOffset).coerceIn(0f, 1f)
+                                                scaleX = 1f + 0.15f * progress * (1f - progress)
+                                                translationX = pageOffset * size.width * 0.15f
+                                                transformOrigin = TransformOrigin(0.5f, 0.5f)
+                                            }
+                                            .verticalScroll(rememberScrollState())
                                             .padding(horizontal = 16.dp),
                                         verticalArrangement = Arrangement.spacedBy(10.dp)
                                     ) {
@@ -554,6 +588,14 @@ fun SongInfoBottomSheet(
                                     Column(
                                         modifier = Modifier
                                             .fillMaxWidth()
+                                            .graphicsLayer {
+                                                val pageOffset = page - (pagerState.currentPage + pagerState.currentPageOffsetFraction)
+                                                val progress = kotlin.math.abs(pageOffset).coerceIn(0f, 1f)
+                                                scaleX = 1f + 0.15f * progress * (1f - progress)
+                                                translationX = pageOffset * size.width * 0.15f
+                                                transformOrigin = TransformOrigin(0.5f, 0.5f)
+                                            }
+                                            .verticalScroll(rememberScrollState())
                                             .padding(horizontal = 16.dp),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
@@ -647,7 +689,7 @@ fun SongInfoBottomSheet(
                         .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                         .padding(5.dp),
                     containerColor = Color.Transparent,
                     divider = {},
@@ -706,7 +748,6 @@ fun SongInfoBottomSheet(
                     }
                 }
             }
-        }
     }
 
     EditSongSheet(
