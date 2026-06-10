@@ -31,12 +31,14 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          cache: 'none'
 
       - name: Pin Kotlin version for CodeQL compatibility
         # CodeQL does not yet support Kotlin 2.4.0 (max: 2.3.x).
         # This overrides the version only for this CI job without touching source files.
         # TODO: remove once CodeQL adds Kotlin 2.4.0 support.
-        run: echo "kotlin.version=2.3.20" >> gradle.properties
+        run: sed -i 's/kotlin = "2.4.0"/kotlin = "2.3.20"/' gradle/libs.versions.toml
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
