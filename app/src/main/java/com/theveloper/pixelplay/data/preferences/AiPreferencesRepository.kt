@@ -39,6 +39,7 @@ class AiPreferencesRepository @Inject constructor(
         fun getApiKey(provider: AiProvider) = stringPreferencesKey("${provider.name.lowercase()}_api_key")
         fun getModel(provider: AiProvider) = stringPreferencesKey("${provider.name.lowercase()}_model")
         fun getSystemPrompt(provider: AiProvider) = stringPreferencesKey("${provider.name.lowercase()}_system_prompt")
+        fun getBaseUrl(provider: AiProvider) = stringPreferencesKey("${provider.name.lowercase()}_base_url")
     }
 
     // Generic accessors for AiHandler
@@ -52,6 +53,9 @@ class AiPreferencesRepository @Inject constructor(
         dataStore.data.map { preferences ->
             preferences[Keys.getSystemPrompt(provider)] ?: DEFAULT_SYSTEM_PROMPT
         }
+
+    fun getBaseUrl(provider: AiProvider): Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.getBaseUrl(provider)] ?: "" }
 
     suspend fun setApiKey(provider: AiProvider, apiKey: String) {
         dataStore.edit { preferences -> preferences[Keys.getApiKey(provider)] = apiKey.trim() }
@@ -69,6 +73,10 @@ class AiPreferencesRepository @Inject constructor(
         dataStore.edit { preferences ->
             preferences[Keys.getSystemPrompt(provider)] = DEFAULT_SYSTEM_PROMPT
         }
+    }
+
+    suspend fun setBaseUrl(provider: AiProvider, url: String) {
+        dataStore.edit { preferences -> preferences[Keys.getBaseUrl(provider)] = url.trim() }
     }
 
     // Convenience properties for legacy compatibility (e.g. PlayerViewModel)
@@ -107,6 +115,11 @@ class AiPreferencesRepository @Inject constructor(
     val openrouterApiKey: Flow<String> = getApiKey(AiProvider.OPENROUTER)
     val openrouterModel: Flow<String> = getModel(AiProvider.OPENROUTER)
     val openrouterSystemPrompt: Flow<String> = getSystemPrompt(AiProvider.OPENROUTER)
+
+    val customApiKey: Flow<String> = getApiKey(AiProvider.CUSTOM)
+    val customModel: Flow<String> = getModel(AiProvider.CUSTOM)
+    val customSystemPrompt: Flow<String> = getSystemPrompt(AiProvider.CUSTOM)
+    val customBaseUrl: Flow<String> = getBaseUrl(AiProvider.CUSTOM)
 
     val aiProvider: Flow<String> =
         dataStore.data.map { preferences -> preferences[Keys.AI_PROVIDER] ?: "GEMINI" }
