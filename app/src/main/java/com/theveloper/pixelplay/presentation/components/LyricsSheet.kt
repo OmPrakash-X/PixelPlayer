@@ -1192,7 +1192,6 @@ private fun LyricsPlaybackSeekBar(
         isPlaying = isPlaying,
         modifier = modifier
     )
-    }
 }
 
 @OptIn(ExperimentalSnapperApi::class)
