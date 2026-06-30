@@ -106,6 +106,8 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.Cloud
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Pause
@@ -848,10 +850,25 @@ fun FullPlayerContent(
                 } else {
                     FullPlayerPortraitContent(
                         paddingValues = paddingValues,
+                        song = song,
+                        currentPlaybackQueue = currentPlaybackQueue,
+                        currentMediaItemIndex = currentQueueIndex ?: currentMediaItemIndex,
+                        isRemotePlaybackActive = isRemotePlaybackActive,
+                        selectedRouteName = selectedRouteName,
+                        isBluetoothEnabled = isBluetoothEnabled,
+                        bluetoothName = bluetoothName,
+                        isFavoriteProvider = isFavoriteProvider,
+                        isPlayingProvider = isPlayingProvider,
+                        onPlayPause = onPlayPause,
+                        onNext = onNext,
+                        onPrevious = onPrevious,
+                        onFavoriteToggle = onFavoriteToggle,
+                        onShowQueueClicked = onShowQueueClicked,
+                        onShowCastClicked = onShowCastClicked,
+                        onLyricsClick = onLyricsClick,
                         albumCoverSection = albumCoverSection,
-                        songMetadataSection = portraitSongMetadataSection,
                         playerProgressSection = playerProgressSection,
-                        controlsSection = controlsSection
+                        playerViewModel = playerViewModel
                     )
                 }
         }
