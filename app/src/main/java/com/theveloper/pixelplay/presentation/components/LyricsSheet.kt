@@ -1187,6 +1187,7 @@ fun LyricsSheet(
 
       }
     }
+    }
 }
 
 @Composable
@@ -1686,6 +1687,7 @@ fun LyricLineRow(
     }
 }
 
+// End of LyricsSheet composable
 @Composable
 fun LyricWordSpan(
     word: SyncedWord,

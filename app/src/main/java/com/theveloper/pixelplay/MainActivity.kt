@@ -893,7 +893,7 @@ class MainActivity : ComponentActivity() {
                                         clip = true
                                         shadowElevation = navBarElevationPx
                                     },
-                                color = if (useDarkTheme) androidx.compose.ui.graphics.Color(0xAA0C0C0C) else androidx.compose.ui.graphics.Color(0xAAFFFFFF)
+                                color = if (isSystemInDarkTheme()) androidx.compose.ui.graphics.Color(0xAA0C0C0C) else androidx.compose.ui.graphics.Color(0xAAFFFFFF)
                             ) {
                                 PlayerInternalNavigationBar(
                                     navController = navController,
