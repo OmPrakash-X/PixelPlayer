@@ -12,6 +12,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.MutatorMutex
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -695,8 +696,36 @@ fun UnifiedPlayerSheetV2(
                                 clip = false
                             )
                             .background(
-                                color = playerAreaBackground,
+                                color = run {
+                                    val fraction = playerContentExpansionFraction.value
+                                    val blendedMiniBg = Color(
+                                        red = (playerAreaBackground.red * 0.12f + 0.04f).coerceIn(0f, 1f),
+                                        green = (playerAreaBackground.green * 0.12f + 0.04f).coerceIn(0f, 1f),
+                                        blue = (playerAreaBackground.blue * 0.12f + 0.04f).coerceIn(0f, 1f),
+                                        alpha = 0.85f
+                                    )
+                                    if (fraction >= 0.99f) {
+                                        Color.Transparent
+                                    } else {
+                                        blendedMiniBg.copy(alpha = blendedMiniBg.alpha * (1f - fraction).coerceIn(0f, 1f))
+                                    }
+                                },
                                 shape = sheetInteractionState.playerShadowShape
+                            )
+                            .then(
+                                run {
+                                    val fraction = playerContentExpansionFraction.value
+                                    if (fraction < 0.2f) {
+                                        val borderAlpha = (0.08f * (1f - fraction / 0.2f)).coerceIn(0f, 0.08f)
+                                        Modifier.border(
+                                            width = 1.dp,
+                                            color = Color.White.copy(alpha = borderAlpha),
+                                            shape = sheetInteractionState.playerShadowShape
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                }
                             )
                             .clip(sheetInteractionState.playerShadowShape)
                             // innerLayout:

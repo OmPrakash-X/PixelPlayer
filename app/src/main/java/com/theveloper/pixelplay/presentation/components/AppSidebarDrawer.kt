@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Color
+import com.theveloper.pixelplay.ui.theme.LocalPixelPlayDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.GraphicEq
@@ -44,6 +48,10 @@ fun AppSidebarDrawer(
     onDestinationSelected: (DrawerDestination) -> Unit,
     content: @Composable () -> Unit
 ) {
+    val isDarkTheme = LocalPixelPlayDarkTheme.current
+    val drawerBgColor = if (isDarkTheme) Color(0xCC0C0C0C) else Color(0xCCFFFFFF)
+    val drawerShape = RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         gesturesEnabled = false,
@@ -52,8 +60,16 @@ fun AppSidebarDrawer(
                 modifier = Modifier
                     .width(300.dp)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(topEnd = 28.dp, bottomEnd = 28.dp)),
-                drawerContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    .clip(drawerShape)
+                    .background(drawerBgColor)
+                    .then(
+                        Modifier.border(
+                            width = 1.dp,
+                            color = Color.White.copy(alpha = if (isDarkTheme) 0.08f else 0.04f),
+                            shape = drawerShape
+                        )
+                    ),
+                drawerContainerColor = Color.Transparent
             ) {
                 DrawerContent(
                     selectedRoute = selectedRoute,

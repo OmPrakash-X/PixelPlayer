@@ -242,9 +242,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             val systemDarkTheme = isSystemInDarkTheme()
             val appThemeMode by themePreferencesRepository.appThemeModeFlow.collectAsStateWithLifecycle(initialValue = AppThemeMode.FOLLOW_SYSTEM)
-            val showScrollbar by userPreferencesRepository.showScrollbarFlow.collectAsStateWithLifecycle(initialValue = true)
+            val showScrollbar by userPreferencesRepository.showScrollbarFlow.collectAsStateWithLifecycle(initialValue = false)
             val useDarkTheme = when (appThemeMode) {
-                AppThemeMode.DARK -> true
+                AppThemeMode.DARK, AppThemeMode.AMOLED -> true
                 AppThemeMode.LIGHT -> false
                 else -> systemDarkTheme
             }
@@ -290,7 +290,8 @@ class MainActivity : ComponentActivity() {
 
             CompositionLocalProvider(LocalShowScrollbar provides showScrollbar) {
                 PixelPlayTheme(
-                    darkTheme = useDarkTheme
+                    darkTheme = useDarkTheme,
+                    isAmoled = appThemeMode == AppThemeMode.AMOLED
                 ) {
                     var contentVisible by remember { mutableStateOf(false) }
                     val contentAlpha by animateFloatAsState(
@@ -892,7 +893,7 @@ class MainActivity : ComponentActivity() {
                                         clip = true
                                         shadowElevation = navBarElevationPx
                                     },
-                                color = NavigationBarDefaults.containerColor
+                                color = if (useDarkTheme) androidx.compose.ui.graphics.Color(0xAA0C0C0C) else androidx.compose.ui.graphics.Color(0xAAFFFFFF)
                             ) {
                                 PlayerInternalNavigationBar(
                                     navController = navController,

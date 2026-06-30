@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.util.lerp
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.theveloper.pixelplay.presentation.components.player.LiquidGlassBackground
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -605,16 +606,9 @@ fun LyricsSheet(
 
     
 
-    Scaffold(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            // ─── Enter / Predictive-back exit transformation ──────────────────
-            // Read backProgressProvider inside graphicsLayer (draw-phase) — no layout
-            // pass is triggered per gesture frame, same pattern as SheetVisualState.
-            // 0f = fully visible, 1f = fully dismissed.
-            // Effect: scale down to 92 % + slide down 8 % of height + fade to 72 % alpha.
-            // Matches Android predictive back spec for full-screen destinations and
-            // mirrors the scale+alpha treatment used across the rest of the app.
             .graphicsLayer {
                 val p = backProgressProvider.value
                 val scale = lerp(1f, 0.92f, p)
@@ -623,55 +617,90 @@ fun LyricsSheet(
                 translationY = lerp(0f, size.height * 0.08f, p)
             }
             .clip(RoundedCornerShape(32.dp))
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDragStart = {
-                        isSwipeActive = true
-                        hasTriggeredAction = false
-                        dragOffset = 0f
-                        resetImmersiveTimer()
-                        coroutineScope.launch {
-                            swipeProgress.snapTo(0f)
-                        }
-                    },
-                    onDragEnd = {
-                        isSwipeActive = false
-                        val committed = abs(dragOffset) > swipeThresholdPx && !hasTriggeredAction 
-                        
-                        if (committed) {
-                            if (dragOffset > 0) onPrev() else onNext()
-                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        }
+    ) {
+        LiquidGlassBackground(
+            expansionFraction = 1f,
+            colorScheme = colorScheme,
+            modifier = Modifier.fillMaxSize()
+        )
 
-                        coroutineScope.launch {
-                             swipeProgress.animateTo(0f, tween(200))
-                             dragOffset = 0f
-                        }
-                    },
-                    onDragCancel = {
-                        isSwipeActive = false
-                        dragOffset = 0f
-                        coroutineScope.launch {
-                            swipeProgress.animateTo(0f, tween(200))
-                        }
-                    },
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        resetImmersiveTimer()
-                        
-                        if (!hasTriggeredAction) {
-                            dragOffset += dragAmount.x
-                            val progress = (abs(dragOffset) / swipeThresholdPx).coerceIn(0f, 1f)
-                            
+        if (currentSong != null) {
+            SmartImage(
+                model = currentSong,
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(60.dp)
+                    .graphicsLayer { alpha = 0.45f }
+            )
+        }
+
+        // Dark Vignette/Scrim Overlay for Lyrics Contrast
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.Black.copy(alpha = 0.8f)
+                        )
+                    )
+                )
+        )
+
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDragStart = {
+                            isSwipeActive = true
+                            hasTriggeredAction = false
+                            dragOffset = 0f
+                            resetImmersiveTimer()
                             coroutineScope.launch {
-                                swipeProgress.snapTo(progress)
+                                swipeProgress.snapTo(0f)
+                            }
+                        },
+                        onDragEnd = {
+                            isSwipeActive = false
+                            val committed = abs(dragOffset) > swipeThresholdPx && !hasTriggeredAction 
+                            
+                            if (committed) {
+                                if (dragOffset > 0) onPrev() else onNext()
+                                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                            }
+
+                            coroutineScope.launch {
+                                 swipeProgress.animateTo(0f, tween(200))
+                                 dragOffset = 0f
+                            }
+                        },
+                        onDragCancel = {
+                            isSwipeActive = false
+                            dragOffset = 0f
+                            coroutineScope.launch {
+                                swipeProgress.animateTo(0f, tween(200))
+                            }
+                        },
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            resetImmersiveTimer()
+                            
+                            if (!hasTriggeredAction) {
+                                dragOffset += dragAmount.x
+                                val progress = (abs(dragOffset) / swipeThresholdPx).coerceIn(0f, 1f)
+                                
+                                coroutineScope.launch {
+                                    swipeProgress.snapTo(progress)
+                                }
                             }
                         }
-                    }
-                )
-            },
-        containerColor = containerColor,
-        contentColor = contentColor,
+                    )
+                },
+            containerColor = Color.Transparent,
+            contentColor = contentColor,
         // Removed TopBar and FAB
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize()) {
@@ -1185,6 +1214,7 @@ private fun LyricsPlaybackSeekBar(
         isPlaying = isPlaying,
         modifier = modifier
     )
+    }
 }
 
 @OptIn(ExperimentalSnapperApi::class)

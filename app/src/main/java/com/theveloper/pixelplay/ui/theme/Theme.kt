@@ -109,11 +109,12 @@ val LightColorScheme = lightColorScheme(
 @Composable
 fun PixelPlayTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    isAmoled: Boolean = false,
     colorSchemePairOverride: ColorSchemePair? = null,
     content: @Composable () -> Unit
 ) {
     val context = LocalContext.current
-    val finalColorScheme = when {
+    val rawColorScheme = when {
         colorSchemePairOverride == null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             // Tema dinámico del sistema como prioridad si no hay override
             try {
@@ -130,6 +131,21 @@ fun PixelPlayTheme(
         // Fallback final a los defaults si no hay override ni dynamic colors aplicables
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+
+    val finalColorScheme = if (darkTheme && isAmoled) {
+        rawColorScheme.copy(
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceContainer = Color(0xFF0C0C0C),
+            surfaceContainerHigh = Color(0xFF141414),
+            surfaceContainerHighest = Color(0xFF1E1E1E),
+            surfaceContainerLow = Color(0xFF060606),
+            surfaceContainerLowest = Color.Black,
+            surfaceVariant = Color(0xFF0F0F0F)
+        )
+    } else {
+        rawColorScheme
     }
 
     PixelPlayStatusBarStyle(

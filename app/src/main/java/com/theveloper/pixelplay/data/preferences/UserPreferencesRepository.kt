@@ -45,6 +45,7 @@ object AppThemeMode {
     const val FOLLOW_SYSTEM = "follow_system"
     const val LIGHT = "light"
     const val DARK = "dark"
+    const val AMOLED = "amoled"
 }
 
 const val MIN_NAV_BAR_CORNER_RADIUS = 0
@@ -761,7 +762,7 @@ suspend fun markDirectoryRulesVersionApplied(version: Int) {
 
     val showScrollbarFlow: Flow<Boolean> =
         dataStore.data.map { preferences ->
-            preferences[PreferencesKeys.SHOW_SCROLLBAR] ?: true
+            preferences[PreferencesKeys.SHOW_SCROLLBAR] ?: false
         }
 
     suspend fun setShowScrollbar(enabled: Boolean) {

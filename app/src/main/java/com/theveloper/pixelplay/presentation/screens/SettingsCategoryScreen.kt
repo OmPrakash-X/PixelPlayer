@@ -557,7 +557,8 @@ fun SettingsCategoryScreen(
                                     options = mapOf(
                                         AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
                                         AppThemeMode.DARK to stringResource(R.string.settings_theme_dark),
-                                        AppThemeMode.FOLLOW_SYSTEM to stringResource(R.string.settings_theme_follow_system)
+                                        AppThemeMode.AMOLED to "Pitch Black (AMOLED)",
+                                        AppThemeMode.FOLLOW_SYSTEM to stringResourceand in the lrycis shheets as it have dymaic scrolling lyri the add blur at tha back of th lyrcis with(R.string.settings_theme_follow_system)
                                     ),
                                     selectedKey = uiState.appThemeMode,
                                     onSelectionChanged = { settingsViewModel.setAppThemeMode(it) },
