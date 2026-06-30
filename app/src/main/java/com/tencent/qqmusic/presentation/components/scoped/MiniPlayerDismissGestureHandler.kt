@@ -26,8 +26,10 @@ import kotlin.math.sign
 private enum class MiniDismissDragPhase { IDLE, TENSION, SNAPPING, FREE_DRAG }
 
 /**
- * Keeps mini-player dismiss gesture behavior isolated from the sheet host.
- * Logic is unchanged; this only centralizes gesture transitions and animation dispatch.
+ * Handles mini-player horizontal swipe gestures:
+ *  - Short swipe LEFT  → next song
+ *  - Short swipe RIGHT → previous song
+ *  - Long swipe (>65% screen width) → dismiss queue (original behavior)
  */
 internal class MiniPlayerDismissGestureHandler(
     private val scope: CoroutineScope,
@@ -36,15 +38,25 @@ internal class MiniPlayerDismissGestureHandler(
     private val offsetAnimatable: Animatable<Float, AnimationVector1D>,
     private val screenWidthPx: Float,
     private val onDismissPlaylistAndShowUndo: () -> Unit,
+    private val onNextSong: () -> Unit = {},
+    private val onPreviousSong: () -> Unit = {},
     private val onDismissStarted: () -> Unit = {}
 ) {
     private var dragPhase: MiniDismissDragPhase = MiniDismissDragPhase.IDLE
     private var accumulatedDragX: Float = 0f
     private var offsetJob: Job? = null
+    private var hapticFiredForCurrentDrag = false
+
+    // Swipe left >= 40% screen → next song
+    // Swipe right >= 40% screen → previous song
+    // Either direction >= 65% screen → dismiss queue
+    private val skipThresholdFraction = 0.40f
+    private val dismissThresholdFraction = 0.65f
 
     fun onDragStart() {
         dragPhase = MiniDismissDragPhase.TENSION
         accumulatedDragX = 0f
+        hapticFiredForCurrentDrag = false
         offsetJob?.cancel()
         offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             offsetAnimatable.stop()
@@ -71,15 +83,15 @@ internal class MiniPlayerDismissGestureHandler(
             }
 
             MiniDismissDragPhase.SNAPPING -> {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                if (!hapticFiredForCurrentDrag) {
+                    hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                    hapticFiredForCurrentDrag = true
+                }
                 offsetJob?.cancel()
                 offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
                     offsetAnimatable.animateTo(
                         targetValue = accumulatedDragX,
-                        animationSpec = spring(
-                            dampingRatio = 0.8f,
-                            stiffness = Spring.StiffnessLow
-                        )
+                        animationSpec = spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessLow)
                     )
                 }
                 dragPhase = MiniDismissDragPhase.FREE_DRAG
@@ -105,30 +117,55 @@ internal class MiniPlayerDismissGestureHandler(
     fun onDragEnd() {
         dragPhase = MiniDismissDragPhase.IDLE
         offsetJob?.cancel()
-        val dismissThreshold = screenWidthPx * 0.4f
-        if (abs(accumulatedDragX) > dismissThreshold) {
-            onDismissStarted()
-            val targetDismissOffset = if (accumulatedDragX < 0) -screenWidthPx else screenWidthPx
-            offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                offsetAnimatable.animateTo(
-                    targetValue = targetDismissOffset,
-                    animationSpec = tween(
-                        durationMillis = 200,
-                        easing = FastOutSlowInEasing
+        val dismissThreshold = screenWidthPx * dismissThresholdFraction
+        val skipThreshold = screenWidthPx * skipThresholdFraction
+        val dragAbs = abs(accumulatedDragX)
+        val isLeftSwipe = accumulatedDragX < 0
+
+        when {
+            // Long swipe → dismiss queue
+            dragAbs > dismissThreshold -> {
+                onDismissStarted()
+                val targetDismissOffset = if (isLeftSwipe) -screenWidthPx else screenWidthPx
+                offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    offsetAnimatable.animateTo(
+                        targetValue = targetDismissOffset,
+                        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
                     )
-                )
-                onDismissPlaylistAndShowUndo()
-                offsetAnimatable.snapTo(0f)
+                    onDismissPlaylistAndShowUndo()
+                    offsetAnimatable.snapTo(0f)
+                }
             }
-        } else {
-            offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                offsetAnimatable.animateTo(
-                    targetValue = 0f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
+            // Medium swipe → skip track
+            dragAbs > skipThreshold -> {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                val slideTarget = if (isLeftSwipe) -screenWidthPx * 0.28f else screenWidthPx * 0.28f
+                offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    offsetAnimatable.animateTo(
+                        targetValue = slideTarget,
+                        animationSpec = tween(durationMillis = 120, easing = FastOutSlowInEasing)
                     )
-                )
+                    if (isLeftSwipe) onNextSong() else onPreviousSong()
+                    offsetAnimatable.animateTo(
+                        targetValue = 0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
+                    )
+                }
+            }
+            // Short swipe → spring back
+            else -> {
+                offsetJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    offsetAnimatable.animateTo(
+                        targetValue = 0f,
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
+                    )
+                }
             }
         }
     }
@@ -142,9 +179,13 @@ internal fun rememberMiniPlayerDismissGestureHandler(
     offsetAnimatable: Animatable<Float, AnimationVector1D>,
     screenWidthPx: Float,
     onDismissPlaylistAndShowUndo: () -> Unit,
+    onNextSong: () -> Unit = {},
+    onPreviousSong: () -> Unit = {},
     onDismissStarted: () -> Unit
 ): MiniPlayerDismissGestureHandler {
-    val onDismissPlaylistAndShowUndoState = rememberUpdatedState(onDismissPlaylistAndShowUndo)
+    val onDismissState = rememberUpdatedState(onDismissPlaylistAndShowUndo)
+    val onNextState = rememberUpdatedState(onNextSong)
+    val onPrevState = rememberUpdatedState(onPreviousSong)
     val onDismissStartedState = rememberUpdatedState(onDismissStarted)
     return remember(scope, density, hapticFeedback, offsetAnimatable, screenWidthPx) {
         MiniPlayerDismissGestureHandler(
@@ -153,7 +194,9 @@ internal fun rememberMiniPlayerDismissGestureHandler(
             hapticFeedback = hapticFeedback,
             offsetAnimatable = offsetAnimatable,
             screenWidthPx = screenWidthPx,
-            onDismissPlaylistAndShowUndo = { onDismissPlaylistAndShowUndoState.value() },
+            onDismissPlaylistAndShowUndo = { onDismissState.value() },
+            onNextSong = { onNextState.value() },
+            onPreviousSong = { onPrevState.value() },
             onDismissStarted = { onDismissStartedState.value() }
         )
     }

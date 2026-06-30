@@ -37,6 +37,8 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
@@ -45,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.size.Size
 import com.tencent.qqmusic.data.model.Song
+import com.tencent.qqmusic.presentation.components.player.LiquidGlassBackground
 import com.tencent.qqmusic.ui.theme.GoogleSansRounded
 
 internal val LocalMaterialTheme = compositionLocalOf<ColorScheme> { error("No ColorScheme provided") }
@@ -79,29 +82,29 @@ internal fun MiniPlayerContentInternal(
     val miniPlayerIndication = remember { ripple(bounded = false) }
 
     val primaryColor = LocalMaterialTheme.current.primary
-    val containerColor = LocalMaterialTheme.current.primaryContainer
+    val colorScheme = LocalMaterialTheme.current
 
-    // Pill container: two background layers + content on top
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
     ) {
-        // Layer 1: full dim background track
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(containerColor)
+        // Layer 1: Liquid glass animated background (same as full player)
+        LiquidGlassBackground(
+            expansionFraction = 1f,   // always fully visible in mini player
+            colorScheme = colorScheme,
+            modifier = Modifier.fillMaxSize()
         )
-        // Layer 2: progress fill — grows left-to-right as song plays
+
+        // Layer 2: Progress fill — primary tint grows left-to-right as song plays
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(fraction = progressFraction.coerceIn(0f, 1f))
-                .background(primaryColor.copy(alpha = 0.28f))
+                .background(primaryColor.copy(alpha = 0.22f))
         )
 
-        // Layer 3: content row sits on top of the two fill layers
+        // Layer 3: Content row on top
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -126,7 +129,7 @@ internal fun MiniPlayerContentInternal(
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
                         strokeWidth = 2.dp,
-                        color = LocalMaterialTheme.current.onPrimaryContainer
+                        color = colorScheme.onPrimaryContainer
                     )
                 } else if (isPreparingPlayback) {
                     CircularWavyProgressIndicator(modifier = Modifier.size(24.dp))
@@ -142,13 +145,13 @@ internal fun MiniPlayerContentInternal(
                     fontWeight = FontWeight.SemiBold,
                     letterSpacing = (-0.2).sp,
                     fontFamily = GoogleSansRounded,
-                    color = LocalMaterialTheme.current.onPrimaryContainer
+                    color = colorScheme.onPrimaryContainer
                 )
                 val artistStyle = MaterialTheme.typography.bodySmall.copy(
                     fontSize = 13.sp,
                     letterSpacing = 0.sp,
                     fontFamily = GoogleSansRounded,
-                    color = LocalMaterialTheme.current.onPrimaryContainer.copy(alpha = 0.7f)
+                    color = colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
 
                 AutoScrollingText(
@@ -158,24 +161,24 @@ internal fun MiniPlayerContentInternal(
                         else -> song.title
                     },
                     style = titleStyle,
-                    gradientEdgeColor = LocalMaterialTheme.current.primaryContainer,
+                    gradientEdgeColor = Color.Transparent,  // transparent edges on glass bg
                     canScroll = canScroll
                 )
                 AutoScrollingText(
                     text = if (isPreparingPlayback) "Loading audio…" else song.displayArtist,
                     style = artistStyle,
-                    gradientEdgeColor = LocalMaterialTheme.current.primaryContainer,
+                    gradientEdgeColor = Color.Transparent,
                     canScroll = canScroll
                 )
             }
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Single play/pause button — no prev/next (use swipe gestures instead)
+            // Single play/pause button — swipe gestures handle prev/next
             Box(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(LocalMaterialTheme.current.primary)
+                    .background(colorScheme.primary.copy(alpha = 0.85f))
                     .clickable(
                         interactionSource = playPauseInteraction,
                         indication = miniPlayerIndication,
@@ -189,7 +192,7 @@ internal fun MiniPlayerContentInternal(
                 Icon(
                     imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
-                    tint = LocalMaterialTheme.current.onPrimary,
+                    tint = colorScheme.onPrimary,
                     modifier = Modifier.size(24.dp)
                 )
             }

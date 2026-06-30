@@ -473,8 +473,11 @@ fun UnifiedPlayerSheetV2(
         offsetAnimatable = offsetAnimatable,
         screenWidthPx = screenWidthPx,
         onDismissPlaylistAndShowUndo = { playerViewModel.dismissPlaylistAndShowUndo() },
+        onNextSong = { playerViewModel.nextSong() },
+        onPreviousSong = { playerViewModel.previousSong() },
         onDismissStarted = { playerViewModel.setMiniPlayerDismissing(true) }
     )
+
 
     QueueSheetRuntimeEffects(
         queueSheetController = queueSheetController,
