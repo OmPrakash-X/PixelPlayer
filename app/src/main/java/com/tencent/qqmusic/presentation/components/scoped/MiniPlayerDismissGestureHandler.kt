@@ -47,11 +47,11 @@ internal class MiniPlayerDismissGestureHandler(
     private var offsetJob: Job? = null
     private var hapticFiredForCurrentDrag = false
 
-    // Swipe left >= 40% screen → next song
-    // Swipe right >= 40% screen → previous song
-    // Either direction >= 65% screen → dismiss queue
-    private val skipThresholdFraction = 0.40f
-    private val dismissThresholdFraction = 0.65f
+    // Swipe left >= 20% screen → next song
+    // Swipe right >= 20% screen → previous song
+    // Either direction >= 55% screen → dismiss queue
+    private val skipThresholdFraction = 0.20f
+    private val dismissThresholdFraction = 0.55f
 
     fun onDragStart() {
         dragPhase = MiniDismissDragPhase.TENSION
