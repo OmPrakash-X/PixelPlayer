@@ -79,7 +79,6 @@ import com.tencent.qqmusic.presentation.components.MiniPlayerHeight
 import com.tencent.qqmusic.presentation.components.PlaylistBottomSheet
 import com.tencent.qqmusic.presentation.components.SmartImage
 import com.tencent.qqmusic.presentation.components.SongInfoBottomSheet
-import com.tencent.qqmusic.presentation.components.threeShapeSwitch
 import com.tencent.qqmusic.presentation.components.resolveNavBarOccupiedHeight
 import com.tencent.qqmusic.presentation.navigation.Screen
 import com.tencent.qqmusic.presentation.viewmodel.MainViewModel
@@ -473,7 +472,12 @@ private fun ExpressiveDailyMixHeader(
                         2 -> 15f
                         else -> 0f
                     }
-                    val shape = threeShapeSwitch(index, thirdShapeCornerRadius = 30.dp)
+                    val shape = when (index) {
+                        0 -> RoundedCornerShape(28.dp)
+                        1 -> CircleShape
+                        2 -> RoundedCornerShape(30.dp)
+                        else -> RoundedCornerShape(20.dp)
+                    }
 
                     if (index == 2) {
                         Box(
