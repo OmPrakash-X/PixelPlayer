@@ -125,4 +125,9 @@
     <string name="common_play_album">Play album</string>
     <string name="common_shuffle_play_album">Shuffle play album</string>
     <string name="common_album_art_for_title">Album art for %1$s</string>
+
+    <!-- Missing defaults (present in locale files only) -->
+    <string name="error">Error</string>
+    <string name="error_loading_album">Error loading album data: %s</string>
+    <string name="error_loading_artist">Error loading artist data: %s</string>
 </resources>

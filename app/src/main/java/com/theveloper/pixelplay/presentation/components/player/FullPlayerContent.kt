@@ -833,25 +833,27 @@ fun FullPlayerContent(
                                     }
                                 }
                             }
-                .graphicsLayer { alpha = contentAlpha }
-        ) {
-            if (isLandscape) {
-                FullPlayerLandscapeContent(
-                    paddingValues = paddingValues,
-                    albumCoverSection = albumCoverSection,
-                    songMetadataSection = landscapeSongMetadataSection,
-                    playerProgressSection = playerProgressSection,
-                    controlsSection = controlsSection
-                )
-            } else {
-                FullPlayerPortraitContent(
-                    paddingValues = paddingValues,
-                    albumCoverSection = albumCoverSection,
-                    songMetadataSection = portraitSongMetadataSection,
-                    playerProgressSection = playerProgressSection,
-                    controlsSection = controlsSection
-                )
-            }
+                        )
+                    }
+                }
+            ) { paddingValues ->
+                if (isLandscape) {
+                    FullPlayerLandscapeContent(
+                        paddingValues = paddingValues,
+                        albumCoverSection = albumCoverSection,
+                        songMetadataSection = landscapeSongMetadataSection,
+                        playerProgressSection = playerProgressSection,
+                        controlsSection = controlsSection
+                    )
+                } else {
+                    FullPlayerPortraitContent(
+                        paddingValues = paddingValues,
+                        albumCoverSection = albumCoverSection,
+                        songMetadataSection = portraitSongMetadataSection,
+                        playerProgressSection = playerProgressSection,
+                        controlsSection = controlsSection
+                    )
+                }
         }
     }
     AnimatedVisibility(
@@ -906,7 +908,6 @@ fun FullPlayerContent(
             onFavoriteToggle = onFavoriteToggle
         )
     }
-}
 
     val artistPickerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     if (showArtistPicker && currentSongArtists.isNotEmpty()) {
