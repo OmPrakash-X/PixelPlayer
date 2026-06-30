@@ -80,7 +80,7 @@ fun HomeQuickShortcuts(
                 onClick = onNavigateToRecentlyPlayed
             ),
             ShortcutItem(
-                titleResId = R.string.equalizer_title,
+                titleResId = R.string.settings_category_equalizer_title,
                 icon = Icons.Rounded.Tune,
                 onClick = onNavigateToEqualizer
             )
