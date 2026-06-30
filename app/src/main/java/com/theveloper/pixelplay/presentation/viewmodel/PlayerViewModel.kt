@@ -601,6 +601,13 @@ class PlayerViewModel @Inject constructor(
             initialValue = 4000L
         )
 
+    val useAnimatedLyrics: StateFlow<Boolean> = userPreferencesRepository.useAnimatedLyricsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     private val _isImmersiveTemporarilyDisabled = MutableStateFlow(false)
     val isImmersiveTemporarilyDisabled: StateFlow<Boolean> = _isImmersiveTemporarilyDisabled.asStateFlow()
 
@@ -1050,6 +1057,12 @@ class PlayerViewModel @Inject constructor(
         _searchNavDoubleTapEvents.tryEmit(Unit)
     }
 
+    fun setLastLibraryTabIndex(index: Int) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveLastLibraryTabIndex(index)
+        }
+    }
+
 
     // Last Library Tab Index
     val lastLibraryTabIndexFlow: StateFlow<Int> =
@@ -1234,6 +1247,7 @@ class PlayerViewModel @Inject constructor(
         val immersiveLyricsEnabled: Boolean = false,
         val immersiveLyricsTimeout: Long = 4000L,
         val isImmersiveTemporarilyDisabled: Boolean = false,
+        val useAnimatedLyrics: Boolean = false,
         val isRemotePlaybackActive: Boolean = false,
         val selectedRouteName: String? = null,
         val isBluetoothEnabled: Boolean = false,
@@ -1258,17 +1272,39 @@ class PlayerViewModel @Inject constructor(
         BluetoothSlice(bt, btName)
     }
 
-    // Intermediate combine #2: remaining flows (≤5 for Kotlin type inference)
-    private val fullPlayerSlicePart2 = combine(
+    private data class LyricsConfigSlice(
+        val immersiveLyricsEnabled: Boolean,
+        val immersiveLyricsTimeout: Long,
+        val isImmersiveTemporarilyDisabled: Boolean,
+        val useAnimatedLyrics: Boolean
+    )
+
+    private val lyricsConfigSlice = combine(
         immersiveLyricsEnabled,
         immersiveLyricsTimeout,
         isImmersiveTemporarilyDisabled,
+        useAnimatedLyrics
+    ) { immersive, timeout, disabled, animated ->
+        LyricsConfigSlice(immersive, timeout, disabled, animated)
+    }
+
+    // Intermediate combine #2: remaining flows (≤5 for Kotlin type inference)
+    private val fullPlayerSlicePart2 = combine(
+        lyricsConfigSlice,
         isRemotePlaybackActive,
         combine(selectedRouteName, bluetoothSlice) { route, bt -> route to bt }
-    ) { immersive: Boolean, immersiveTimeout: Long, immersiveDisabled: Boolean,
-        remotePb: Boolean, routeAndBt: Pair<String?, BluetoothSlice> ->
+    ) { lyricsConfig: LyricsConfigSlice, remotePb: Boolean, routeAndBt: Pair<String?, BluetoothSlice> ->
         val (routeName, bt) = routeAndBt
-        FullPlayerSlicePart2(immersive, immersiveTimeout, immersiveDisabled, remotePb, routeName, bt.enabled, bt.name)
+        FullPlayerSlicePart2(
+            immersiveLyricsEnabled = lyricsConfig.immersiveLyricsEnabled,
+            immersiveLyricsTimeout = lyricsConfig.immersiveLyricsTimeout,
+            isImmersiveTemporarilyDisabled = lyricsConfig.isImmersiveTemporarilyDisabled,
+            useAnimatedLyrics = lyricsConfig.useAnimatedLyrics,
+            isRemotePlaybackActive = remotePb,
+            selectedRouteName = routeName,
+            isBluetoothEnabled = bt.enabled,
+            bluetoothName = bt.name
+        )
     }
 
     private data class FullPlayerSlicePart1(
@@ -1283,6 +1319,7 @@ class PlayerViewModel @Inject constructor(
         val immersiveLyricsEnabled: Boolean,
         val immersiveLyricsTimeout: Long,
         val isImmersiveTemporarilyDisabled: Boolean,
+        val useAnimatedLyrics: Boolean,
         val isRemotePlaybackActive: Boolean,
         val selectedRouteName: String?,
         val isBluetoothEnabled: Boolean,
@@ -1302,6 +1339,7 @@ class PlayerViewModel @Inject constructor(
             immersiveLyricsEnabled = p2.immersiveLyricsEnabled,
             immersiveLyricsTimeout = p2.immersiveLyricsTimeout,
             isImmersiveTemporarilyDisabled = p2.isImmersiveTemporarilyDisabled,
+            useAnimatedLyrics = p2.useAnimatedLyrics,
             isRemotePlaybackActive = p2.isRemotePlaybackActive,
             selectedRouteName = p2.selectedRouteName,
             isBluetoothEnabled = p2.isBluetoothEnabled,

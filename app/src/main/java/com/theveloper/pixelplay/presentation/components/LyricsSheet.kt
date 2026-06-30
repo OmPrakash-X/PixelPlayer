@@ -244,6 +244,7 @@ fun LyricsSheet(
     immersiveLyricsEnabled: Boolean,
     immersiveLyricsTimeout: Long,
     isImmersiveTemporarilyDisabled: Boolean,
+    useAnimatedLyrics: Boolean,
     onSetImmersiveTemporarilyDisabled: (Boolean) -> Unit,
     onSaveLyricsToFile: (Song, Lyrics, Boolean) -> Unit,
     onTranslateViaAi: () -> Unit,
@@ -337,12 +338,6 @@ fun LyricsSheet(
         context.dataStore.data.map { it[booleanPreferencesKey("show_lyrics_romanization")] ?: true }
     }
     val showLyricsRomanization by showLyricsRomanizationFlow.collectAsStateWithLifecycle(initialValue = true)
-
-    // Read animated lyrics preference internally from DataStore
-    val useAnimatedLyricsFlow = remember(context) {
-        context.dataStore.data.map { it[booleanPreferencesKey("use_animated_lyrics")] ?: false }
-    }
-    val useAnimatedLyrics by useAnimatedLyricsFlow.collectAsStateWithLifecycle(initialValue = false)
 
     val animatedLyricsBlurEnabledFlow = remember(context) {
         context.dataStore.data.map { it[booleanPreferencesKey("animated_lyrics_blur_enabled")] ?: true }

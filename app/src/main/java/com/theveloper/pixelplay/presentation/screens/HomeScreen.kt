@@ -93,6 +93,7 @@ import com.theveloper.pixelplay.presentation.jellyfin.dashboard.JellyfinDashboar
 import com.theveloper.pixelplay.presentation.navidrome.dashboard.NavidromeDashboardViewModel
 import com.theveloper.pixelplay.presentation.qqmusic.dashboard.QqMusicDashboardViewModel
 import com.theveloper.pixelplay.presentation.components.DailyMixSection
+import com.theveloper.pixelplay.presentation.components.HomeQuickShortcuts
 import com.theveloper.pixelplay.presentation.components.HomeGradientTopBar
 import com.theveloper.pixelplay.presentation.components.HomeOptionsBottomSheet
 import com.theveloper.pixelplay.presentation.components.MiniPlayerHeight
@@ -382,6 +383,28 @@ fun HomeScreen(
                             }
                         )
                     }
+                }
+
+                item(
+                    key = "quick_shortcuts",
+                    contentType = "quick_shortcuts"
+                ) {
+                    HomeQuickShortcuts(
+                        modifier = Modifier.fillMaxWidth(),
+                        onNavigateToLibraryTab = { index ->
+                            playerViewModel.setLastLibraryTabIndex(index)
+                            navController.navigateSafely(Screen.Library.route)
+                        },
+                        onNavigateToStats = {
+                            navController.navigateSafely(Screen.Stats.route)
+                        },
+                        onNavigateToRecentlyPlayed = {
+                            navController.navigateSafely(Screen.RecentlyPlayed.route)
+                        },
+                        onNavigateToEqualizer = {
+                            navController.navigateSafely(Screen.Equalizer.route)
+                        }
+                    )
                 }
 
                 // Collage

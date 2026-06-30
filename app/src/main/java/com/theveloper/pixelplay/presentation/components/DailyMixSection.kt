@@ -33,6 +33,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.zIndex
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -184,21 +187,24 @@ private fun DailyMixCard(
 ) {
     val headerSongs = songs.take(3).toImmutableList()
     val visibleSongs = songs.take(4).toImmutableList()
-    val cornerRadius = 30.dp
+    val cornerRadius = 24.dp
+    val shape = AbsoluteSmoothCornerShape(
+        cornerRadiusBR = cornerRadius,
+        smoothnessAsPercentTL = 60,
+        cornerRadiusTR = cornerRadius,
+        smoothnessAsPercentTR = 60,
+        cornerRadiusBL = cornerRadius,
+        smoothnessAsPercentBL = 60,
+        cornerRadiusTL = cornerRadius,
+        smoothnessAsPercentBR = 60
+    )
     Card(
-        shape = AbsoluteSmoothCornerShape(
-            cornerRadiusBR = cornerRadius,
-            smoothnessAsPercentTL = 60,
-            cornerRadiusTR = cornerRadius,
-            smoothnessAsPercentTR = 60,
-            cornerRadiusBL = cornerRadius,
-            smoothnessAsPercentBL = 60,
-            cornerRadiusTL = cornerRadius,
-            smoothnessAsPercentBR = 60
-        ),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.6f)),
         elevation = CardDefaults.elevatedCardElevation(0.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), shape)
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             DailyMixHeader(thumbnails = headerSongs)
@@ -208,15 +214,12 @@ private fun DailyMixCard(
                 playerViewModel = playerViewModel,
                 onMoreOptionsClick = onMoreOptionsClick
             )
+            Spacer(modifier = Modifier.height(10.dp))
             ViewAllDailyMixButton(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(
-                        start = 10.dp,
-                        end = 10.dp,
-                        top = 6.dp,
-                        bottom = 6.dp
-                    ),
+                    .padding(horizontal = 12.dp)
+                    .padding(bottom = 12.dp),
                 onClickOpen = {
                     onClickOpen()
                 },
@@ -229,26 +232,16 @@ private fun DailyMixCard(
 fun DailyMixHeader(thumbnails: ImmutableList<Song>) {
     val titleStyle = rememberDailyMixTitleStyle()
 
-    fun shapeConditionalModifier(index: Int): Modifier {
-        if (index == 0){
-            return Modifier.size(50.dp).padding(top = 4.dp)
-        } else {
-            if (index == 1) {
-                return Modifier.size(44.dp).aspectRatio(1f).padding(bottom = 4.dp)
-            }
-            return Modifier.size(48.dp) //.padding( = 4.dp)
-        }
-    }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(80.dp)
+            .height(130.dp)
             .background(
-                brush = Brush.horizontalGradient(
+                brush = Brush.linearGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.primary, //.copy(alpha = 0.7f),
-                        MaterialTheme.colorScheme.tertiary //.copy(alpha = 0.7f)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
+                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.14f),
+                        Color.Transparent
                     )
                 )
             ),
@@ -257,35 +250,77 @@ fun DailyMixHeader(thumbnails: ImmutableList<Song>) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 22.dp, end = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Absolute.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(100.dp),
+                    modifier = Modifier.padding(bottom = 6.dp)
+                ) {
+                    Text(
+                        text = "AI CURATED MIX",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.2.sp
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
                 Text(
                     text = stringResource(R.string.home_daily_mix_title),
                     style = titleStyle,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     modifier = Modifier.padding(start = 1.dp),
                     text = stringResource(R.string.home_daily_mix_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Normal,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                 )
             }
-            Row(
-                modifier = Modifier,
-                horizontalArrangement = Arrangement.spacedBy((-16).dp)
+            Spacer(modifier = Modifier.width(16.dp))
+            Box(
+                modifier = Modifier
+                    .width(96.dp)
+                    .height(96.dp),
+                contentAlignment = Alignment.Center
             ) {
                 thumbnails.forEachIndexed { index, song ->
-                    val modifier = shapeConditionalModifier(index)
+                    val (rotationAngle, scaleFactor, translationX) = when (index) {
+                        0 -> Triple(0f, 1.0f, 0.dp) // Front center
+                        1 -> Triple(12f, 0.88f, 18.dp) // Back right
+                        2 -> Triple(-12f, 0.88f, (-18.dp)) // Back left
+                        else -> Triple(0f, 1f, 0.dp)
+                    }
+                    val zIndexVal = when (index) {
+                        0 -> 3f
+                        1 -> 2f
+                        2 -> 1f
+                        else -> 0f
+                    }
+                    val shape = AbsoluteSmoothCornerShape(12.dp, 60)
                     Box(
-                        modifier = modifier
-                            //.size(48.dp)
-                            .clip(threeShapeSwitch(index))
-                            .border(2.dp, MaterialTheme.colorScheme.surface, threeShapeSwitch(index))
+                        modifier = Modifier
+                            .size(58.dp)
+                            .zIndex(zIndexVal)
+                            .graphicsLayer {
+                                rotationZ = rotationAngle
+                                scaleX = scaleFactor
+                                scaleY = scaleFactor
+                                this.translationX = translationX.toPx()
+                            }
+                            .shadow(6.dp, shape)
+                            .border(1.5.dp, MaterialTheme.colorScheme.surface, shape)
+                            .clip(shape)
                     ) {
                         SmartImage(
                             model = song.albumArtUriString,
@@ -300,28 +335,6 @@ fun DailyMixHeader(thumbnails: ImmutableList<Song>) {
     }
 }
 
-@Composable
-fun threeShapeSwitch(index: Int, thirdShapeCornerRadius: Dp = 16.dp): Shape { // Ensure the function returns a Shape
-    return when (index) { // Return the result of the when expression
-        0 -> RoundedStarShape(
-            sides = 6,
-            rotation = 10f
-        )
-        1 -> CircleShape
-        2 -> AbsoluteSmoothCornerShape(
-            cornerRadiusBL = thirdShapeCornerRadius,
-            cornerRadiusTR = thirdShapeCornerRadius,
-            smoothnessAsPercentBL = 60,
-            smoothnessAsPercentTR = 60,
-            cornerRadiusTL = thirdShapeCornerRadius,
-            cornerRadiusBR = thirdShapeCornerRadius,
-            smoothnessAsPercentTL = 60,
-            smoothnessAsPercentBR = 60
-        )
-        else -> CircleShape // It's good practice to have a default case
-    }
-}
-
 @androidx.annotation.OptIn(UnstableApi::class)
 @Composable
 private fun DailyMixSongList(
@@ -332,14 +345,14 @@ private fun DailyMixSongList(
 ) {
     val dailyMixQueueName = stringResource(R.string.home_daily_mix_queue_name)
     val stablePlayerState by playerViewModel.stablePlayerState.collectAsStateWithLifecycle()
-    val itemContainerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    val itemContainerColor = Color.Transparent // Float over card background instead
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-            .clip(RoundedCornerShape(24.dp)),
-        verticalArrangement = Arrangement.spacedBy(3.dp)
+            .padding(horizontal = 12.dp)
+            .clip(RoundedCornerShape(16.dp)),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         songs.forEach { song ->
             EnhancedSongListItem(
@@ -348,8 +361,9 @@ private fun DailyMixSongList(
                 isPlaying = stablePlayerState.isPlaying && stablePlayerState.currentSong?.id == song.id,
                 containerColorOverride = itemContainerColor,
                 onMoreOptionsClick = onMoreOptionsClick,
-                customShape = RoundedCornerShape(10.dp),
-                showAlbumArt = false,
+                customShape = RoundedCornerShape(12.dp),
+                showAlbumArt = true,
+                albumArtSize = 42.dp,
                 onClick = {
                     playerViewModel.showAndPlaySong(
                         song = song,
@@ -364,46 +378,40 @@ private fun DailyMixSongList(
     }
 }
 
-
 @Composable
 private fun ViewAllDailyMixButton(
     modifier: Modifier = Modifier,
     onClickOpen: () -> Unit
 ) {
+    val buttonShape = AbsoluteSmoothCornerShape(14.dp, 60)
     FilledTonalButton(
-        modifier = modifier,
+        modifier = modifier
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), buttonShape),
         onClick = {
             onClickOpen()
         },
         colors = ButtonDefaults.filledTonalButtonColors(
-            containerColor = Color.Transparent
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.35f),
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
-        shape = AbsoluteSmoothCornerShape(
-            cornerRadiusTL = 10.dp,
-            cornerRadiusTR = 10.dp,
-            smoothnessAsPercentTL = 70,
-            smoothnessAsPercentTR = 70,
-            cornerRadiusBL = 60.dp,
-            cornerRadiusBR = 60.dp,
-            smoothnessAsPercentBL = 70,
-            smoothnessAsPercentBR = 70
-
-        )
+        shape = buttonShape
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = stringResource(R.string.home_daily_mix_action_see_all),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
             )
             Icon(
                 painter = painterResource(R.drawable.rounded_arrow_forward_24),
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
     }

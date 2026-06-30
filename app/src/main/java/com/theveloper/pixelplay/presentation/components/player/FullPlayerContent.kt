@@ -134,6 +134,10 @@ import com.theveloper.pixelplay.presentation.components.LocalMaterialTheme
 import com.theveloper.pixelplay.presentation.components.LyricsSheet
 import com.theveloper.pixelplay.presentation.components.scoped.rememberSmoothProgress
 import com.theveloper.pixelplay.presentation.components.subcomps.FetchLyricsDialog
+import com.theveloper.pixelplay.presentation.components.SongInfoBottomSheet
+import com.theveloper.pixelplay.presentation.components.PlaylistBottomSheet
+import com.theveloper.pixelplay.presentation.viewmodel.PlaylistViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.theveloper.pixelplay.presentation.viewmodel.LyricsSearchUiState
 import com.theveloper.pixelplay.presentation.viewmodel.PlayerSheetState
 import com.theveloper.pixelplay.presentation.viewmodel.PlayerViewModel
@@ -250,6 +254,7 @@ fun FullPlayerContent(
     var showSongInfoBottomSheet by remember { mutableStateOf(false) }
     var showLyricsSheet by remember { mutableStateOf(false) }
     var showArtistPicker by rememberSaveable { mutableStateOf(false) }
+    var showPlaylistBottomSheet by remember { mutableStateOf(false) }
     
     val lyricsSearchUiState by playerViewModel.lyricsSearchUiState.collectAsStateWithLifecycle()
 
@@ -265,6 +270,7 @@ fun FullPlayerContent(
     val immersiveLyricsEnabled = fullPlayerSlice.immersiveLyricsEnabled
     val immersiveLyricsTimeout = fullPlayerSlice.immersiveLyricsTimeout
     val isImmersiveTemporarilyDisabled = fullPlayerSlice.isImmersiveTemporarilyDisabled
+    val useAnimatedLyrics = fullPlayerSlice.useAnimatedLyrics
     val isRemotePlaybackActive = fullPlayerSlice.isRemotePlaybackActive
     val selectedRouteName = fullPlayerSlice.selectedRouteName
     val isBluetoothEnabled = fullPlayerSlice.isBluetoothEnabled
@@ -916,6 +922,7 @@ fun FullPlayerContent(
             immersiveLyricsEnabled = immersiveLyricsEnabled,
             immersiveLyricsTimeout = immersiveLyricsTimeout,
             isImmersiveTemporarilyDisabled = isImmersiveTemporarilyDisabled,
+            useAnimatedLyrics = useAnimatedLyrics,
             onSetImmersiveTemporarilyDisabled = { playerViewModel.setImmersiveTemporarilyDisabled(it) },
             isShuffleEnabled = isShuffleEnabled,
             repeatMode = repeatMode,
@@ -937,6 +944,77 @@ fun FullPlayerContent(
                 playerViewModel.triggerArtistNavigationFromPlayer(artist.id)
                 showArtistPicker = false
             }
+        )
+    }
+
+    if (showSongInfoBottomSheet) {
+        SongInfoBottomSheet(
+            song = song,
+            isFavorite = isFavoriteProvider(),
+            onToggleFavorite = onFavoriteToggle,
+            onDismiss = {
+                showSongInfoBottomSheet = false
+                showPlaylistBottomSheet = false
+            },
+            onPlaySong = onPlayPause,
+            onAddToQueue = {
+                playerViewModel.addSongToQueue(song)
+            },
+            onAddNextToQueue = {
+                playerViewModel.addSongNextToQueue(song)
+            },
+            onAddToPlayList = {
+                showPlaylistBottomSheet = true
+            },
+            onDeleteFromDevice = playerViewModel::deleteFromDevice,
+            onNavigateToAlbum = {
+                playerViewModel.triggerAlbumNavigationFromPlayer(song.albumId)
+                showSongInfoBottomSheet = false
+            },
+            onNavigateToArtist = {
+                val resolvedArtistId = currentSongArtists.firstOrNull { it.id != 0L && it.id != -1L }?.id ?: song.artistId
+                playerViewModel.triggerArtistNavigationFromPlayer(resolvedArtistId)
+                showSongInfoBottomSheet = false
+            },
+            onNavigateToArtistById = { artistId ->
+                playerViewModel.triggerArtistNavigationFromPlayer(artistId)
+                showSongInfoBottomSheet = false
+            },
+            onNavigateToGenre = {
+                showSongInfoBottomSheet = false
+            },
+            onEditSong = { newTitle, newArtist, newAlbum, newAlbumArtist, newComposer, newGenre, newLyrics, newTrackNumber, newDiscNumber, replayGainTrackGainDb, replayGainAlbumGainDb, coverArtUpdate ->
+                playerViewModel.editSongMetadata(
+                    song,
+                    newTitle,
+                    newArtist,
+                    newAlbum,
+                    newAlbumArtist,
+                    newComposer,
+                    newGenre,
+                    newLyrics,
+                    newTrackNumber,
+                    newDiscNumber,
+                    replayGainTrackGainDb,
+                    replayGainAlbumGainDb,
+                    coverArtUpdate
+                )
+            },
+            removeFromListTrigger = {}
+        )
+    }
+
+    if (showPlaylistBottomSheet) {
+        val playlistViewModel: PlaylistViewModel = hiltViewModel()
+        val playlistUiState by playlistViewModel.uiState.collectAsStateWithLifecycle()
+        PlaylistBottomSheet(
+            playlistUiState = playlistUiState,
+            songs = listOf(song),
+            onDismiss = {
+                showPlaylistBottomSheet = false
+            },
+            bottomBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+            playerViewModel = playerViewModel,
         )
     }
 }

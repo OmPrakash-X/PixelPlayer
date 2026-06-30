@@ -47,85 +47,95 @@ import racra.compose.smooth_corner_rect_library.AbsoluteSmoothCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun StatsOverviewCard(
     modifier: Modifier = Modifier,
     summary: PlaybackStatsRepository.PlaybackStatsSummary?,
     onClick: () -> Unit
 ) {
-    val containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+    val cornerRadius = 24.dp
     val shape = AbsoluteSmoothCornerShape(
-        cornerRadiusTL = 28.dp,
+        cornerRadiusTL = cornerRadius,
         smoothnessAsPercentTR = 60,
-        cornerRadiusBR = 28.dp,
+        cornerRadiusBR = cornerRadius,
         smoothnessAsPercentTL = 60,
-        cornerRadiusBL = 28.dp,
+        cornerRadiusBL = cornerRadius,
         smoothnessAsPercentBR = 60,
-        cornerRadiusTR = 28.dp,
+        cornerRadiusTR = cornerRadius,
         smoothnessAsPercentBL = 60,
     )
 
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 16.dp)
+            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), shape),
         shape = shape,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.6f)),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         onClick = onClick
     ) {
-        Box(
+        Column(
             modifier = Modifier
+                .fillMaxWidth()
                 .background(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.07f)
+                    brush = Brush.linearGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f),
+                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    )
                 )
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(color = MaterialTheme.colorScheme.surfaceContainer),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(
-                        Modifier.padding(start = 24.dp, top = 24.dp, bottom = 24.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.home_stats_overview_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource((summary?.range ?: StatsTimeRange.WEEK).displayNameRes()),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Box(
-                        modifier = Modifier
-                            .padding(end = 24.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)//RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.primaryContainer),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.home_stats_overview_title),
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.2).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = stringResource((summary?.range ?: StatsTimeRange.WEEK).displayNameRes()),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
                 }
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f))
+                        .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
 
-                Crossfade(
-                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
-                    targetState = summary
-                ) { currentSummary ->
-                    if (currentSummary == null) {
-                        PlaceholderOverviewContent()
-                    } else {
-                        OverviewContent(currentSummary)
-                    }
+            Crossfade(
+                modifier = Modifier.padding(start = 20.dp, end = 20.dp, bottom = 20.dp),
+                targetState = summary
+            ) { currentSummary ->
+                if (currentSummary == null) {
+                    PlaceholderOverviewContent()
+                } else {
+                    OverviewContent(currentSummary)
                 }
             }
         }
@@ -137,8 +147,10 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(
             text = formatListeningDurationLong(summary.totalDurationMs),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineLarge.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = (-0.5).sp
+            ),
             color = MaterialTheme.colorScheme.onSurface
         )
         Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -151,8 +163,8 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
                 Text(
                     text = summary.totalPlayCount.toString(),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
@@ -164,22 +176,30 @@ private fun OverviewContent(summary: PlaybackStatsRepository.PlaybackStatsSummar
                 Text(
                     text = formatListeningDurationCompact(summary.averageDailyDurationMs),
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         }
         val topTrack = summary.topSongs.firstOrNull()
         if (topTrack != null) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.25f))
+                    .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f), RoundedCornerShape(12.dp))
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
                     text = stringResource(R.string.home_stats_overview_top_track),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = topTrack.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -248,16 +268,15 @@ private fun MiniListeningTimeline(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height((70.dp * heightFraction).coerceAtLeast(10.dp))
-                        .clip(CircleShape)
+                        .height((75.dp * heightFraction).coerceAtLeast(10.dp))
+                        .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp, bottomStart = 4.dp, bottomEnd = 4.dp))
                         .background(
-                            color = MaterialTheme.colorScheme.primary
-//                            Brush.verticalGradient(
-//                                listOf(
-//                                    MaterialTheme.colorScheme.primary,
-//                                    MaterialTheme.colorScheme.tertiary
-//                                )
-//                            )
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.tertiary
+                                )
+                            )
                         )
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -314,7 +333,14 @@ private fun MonthlyHorizontalListeningTimeline(
                             .fillMaxWidth(widthFraction)
                             .height(12.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary,
+                                        MaterialTheme.colorScheme.tertiary
+                                    )
+                                )
+                            )
                     )
                 }
             }
