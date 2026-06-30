@@ -618,8 +618,9 @@ fun FullPlayerContent(
             onArtistClick = onSongMetadataArtistClick,
             isPlayingProvider = isPlayingProvider
         )
+    }
 
-        Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
             LiquidGlassBackground(
                 expansionFraction = expansionFractionProvider(),
                 colorScheme = LocalMaterialTheme.current,
@@ -905,6 +906,7 @@ fun FullPlayerContent(
             onFavoriteToggle = onFavoriteToggle
         )
     }
+}
 
     val artistPickerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     if (showArtistPicker && currentSongArtists.isNotEmpty()) {
