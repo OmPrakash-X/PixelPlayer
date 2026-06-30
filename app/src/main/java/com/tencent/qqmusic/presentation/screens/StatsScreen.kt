@@ -262,7 +262,15 @@ fun StatsScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colorStops = arrayOf(
+                            0.0f to MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.12f),
+                            0.3f to MaterialTheme.colorScheme.surface,
+                            1.0f to MaterialTheme.colorScheme.surface
+                        )
+                    )
+                )
                 .nestedScroll(nestedScrollConnection)
         ) {
             if (uiState.isLoading && summary == null) {
@@ -345,12 +353,24 @@ fun StatsScreen(
                     .zIndex(5f)
             ) {
                 val solidAlpha = (collapseFraction * 2f).coerceIn(0f, 1f)
-                val backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = solidAlpha)
+
+                // Gradient top bar matching the home screen's dark glass aesthetic
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.97f * solidAlpha.coerceIn(0f, 1f)),
+                                    MaterialTheme.colorScheme.surface.copy(alpha = 0.82f * solidAlpha.coerceIn(0f, 1f))
+                                )
+                            )
+                        )
+                )
 
                 Column(
                     modifier = Modifier
-                        .background(backgroundColor)
-                        .padding(bottom = 8.dp) // Reduced padding below tabs
+                        .padding(bottom = 8.dp)
                 ) {
                     CollapsibleCommonTopBar(
                         title = stringResource(R.string.stats_title),
@@ -365,8 +385,8 @@ fun StatsScreen(
                                 onClick = statsViewModel::requestStatsRefresh,
                                 enabled = !uiState.isLoading && !uiState.isRefreshing && !isPullRefreshAnimating,
                                 colors = IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                                    contentColor = MaterialTheme.colorScheme.onSurface
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             ) {
                                 Icon(

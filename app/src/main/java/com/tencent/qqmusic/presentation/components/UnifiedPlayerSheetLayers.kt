@@ -118,6 +118,12 @@ internal fun BoxScope.UnifiedPlayerMiniAndFullLayers(
                     val isMiniPlayerVisible by remember {
                         derivedStateOf { playerContentExpansionFraction.value < 0.01f }
                     }
+                    // Compute progress fraction fresh on every draw without triggering recomposition
+                    val progressFraction = run {
+                        val pos = currentPositionProvider()
+                        val dur = infrequentPlayerState.totalDuration
+                        if (dur > 0L) (pos.toFloat() / dur.toFloat()).coerceIn(0f, 1f) else 0f
+                    }
                     MiniPlayerContentInternal(
                         song = currentSongNonNull,
                         isPlaying = infrequentPlayerState.isPlaying,
@@ -127,6 +133,7 @@ internal fun BoxScope.UnifiedPlayerMiniAndFullLayers(
                         onPrevious = { playerViewModel.previousSong() },
                         onNext = { playerViewModel.nextSong() },
                         canScroll = isMiniPlayerVisible && infrequentPlayerState.isPlaying,
+                        progressFraction = progressFraction,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
